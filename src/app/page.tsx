@@ -1,11 +1,5 @@
-import Image from "next/image";
+import { VitaluxeHome } from '@/components/homepage'
 
-export default function Home() {
-  return (
-    <div>
-      <main>
-        return <VitaluxeHome />
-      </main>
-    </div>
-  );
+export default function Page() {
+  return <VitaluxeHome />
 }
