@@ -18,7 +18,7 @@ function HeroSection() {
     <>
       <section className="hero section-wrap">
         <div className="hero-copy">
-          <p className="eyebrow">Distribution professionnelle · Madagascar</p>
+          <p className="eyebrow">Distribution fiable · Madagascar</p>
           <h1>
             Des matières qui <em>définissent</em> vos espaces.
           </h1>

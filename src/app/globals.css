@@ -194,6 +194,8 @@
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
 }
+.menu-button { display: none; }
+.nav-backdrop { display: none; }
 
 /* ── Hero ── */
 .hero {
@@ -236,7 +238,12 @@ h1 {
   max-width: 480px;
   margin-bottom: 2.5rem;
 }
-.hero-actions { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
 .button {
   display: inline-flex;
   align-items: center;
@@ -767,25 +774,54 @@ h1 {
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 8rem; }
-  .hero-visual { height: 320px; }
+  /* Header */
+  .site-header { padding: 0.9rem 1.25rem; }
+  .phone-link { display: none; }
+  .main-nav { display: none; }
+
+  /* Hero actions */
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .button { width: 100%; justify-content: center; }
+  .text-link { align-self: center; }
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-top: 5rem;
+    padding-bottom: 2rem;
+    gap: 2rem;
+  }
+  .hero-visual {
+    height: 260px;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 340px;
+  }
+  .glass-a { width: 180px; height: 230px; left: 20px; top: 20px; }
+  .glass-b { width: 130px; height: 170px; right: 10px; bottom: 10px; }
+  .hero-logo { width: 90px; height: 90px; }
+
+  /* Sections */
   .universe-grid { grid-template-columns: 1fr; }
   .section-heading { grid-template-columns: 1fr; }
   .catalog-head { grid-template-columns: 1fr; }
   .catalog-tools { align-items: flex-start; }
   .contact-inner { grid-template-columns: 1fr; gap: 2rem; }
   .map-card { height: 240px; }
-  .main-nav { display: none; }
-  .main-nav.is-open {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    inset: 0;
-    background: rgba(10,10,10,0.97);
-    align-items: center;
-    justify-content: center;
-    gap: 2rem;
-    z-index: 99;
-  }
-  .main-nav.is-open a { font-size: 1.5rem; }
+  .wb-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .wb-grid { grid-template-columns: 1fr; }
+  .section-wrap { padding: 0 1.25rem; }
+  .univers { padding: 4rem 1.25rem; }
+  .catalogue-section { padding: 4rem 1.25rem; }
+  .contact-section { padding: 4rem 1.25rem; }
+  .wb-section { padding: 2rem 1.25rem; }
+  .site-footer { padding: 2rem 1.25rem; flex-direction: column; align-items: flex-start; }
+  .bag-drawer { width: 100vw; }
+  .hero { padding-top: 4.5rem; }
 }
