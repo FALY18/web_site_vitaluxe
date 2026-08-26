@@ -68,7 +68,11 @@ export function ProductCatalog({ products, onAdd }: ProductCatalogProps) {
                     <Badge>{product.badge}</Badge>
                   </div>
                 )}
-                <div className={`material material-${product.category.toLowerCase()}`} />
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="product-img"
+                />
               </div>
               <div className="product-info">
                 <div>

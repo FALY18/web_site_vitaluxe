@@ -341,89 +341,68 @@ h1 {
 }
 
 /* ── Wind Banner ── */
-@keyframes wind-scroll-v {
-  0%   { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
+@keyframes wb-sway {
+  0%   { transform: translateY(0px)   rotate(0deg)    scale(1);    opacity: 1; }
+  25%  { transform: translateY(-6px)  rotate(-0.4deg) scale(1.01); opacity: 0.85; }
+  60%  { transform: translateY(-10px) rotate(0.3deg)  scale(0.99); opacity: 0.75; }
+  80%  { transform: translateY(-4px)  rotate(-0.2deg) scale(1);    opacity: 0.9; }
+  100% { transform: translateY(0px)   rotate(0deg)    scale(1);    opacity: 1; }
 }
-@keyframes wind-depth {
-  0%   { transform: translateY(0px) scale(1)    rotateX(0deg);   opacity: 0.9; }
-  20%  { transform: translateY(4px) scale(0.98) rotateX(1.5deg); opacity: 0.7; }
-  50%  { transform: translateY(8px) scale(0.96) rotateX(2.5deg); opacity: 0.5; }
-  80%  { transform: translateY(4px) scale(0.98) rotateX(1deg);   opacity: 0.7; }
-  100% { transform: translateY(0px) scale(1)    rotateX(0deg);   opacity: 0.9; }
-}
-.wind-banner {
-  display: flex;
-  justify-content: center;
-  padding: 3rem 2rem;
+.wb-section {
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
-  background: linear-gradient(180deg,
-    rgba(200,169,110,0.04) 0%,
-    rgba(200,169,110,0.01) 100%);
-  perspective: 800px;
+  background: linear-gradient(180deg, rgba(200,169,110,0.04) 0%, transparent 100%);
+  padding: 3rem 2.5rem;
 }
-.wind-card {
-  width: 320px;
-  height: 180px;
+.wb-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+.wb-item {
   background: var(--card);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  overflow: hidden;
-  position: relative;
-  perspective: 600px;
-}
-.wind-card::before,
-.wind-card::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0;
-  height: 48px;
-  z-index: 2;
-  pointer-events: none;
-}
-.wind-card::before {
-  top: 0;
-  background: linear-gradient(180deg, var(--card) 0%, transparent 100%);
-}
-.wind-card::after {
-  bottom: 0;
-  background: linear-gradient(0deg, var(--card) 0%, transparent 100%);
-}
-.wind-track-v {
+  border-radius: 16px;
+  padding: 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
-  animation: wind-scroll-v 18s cubic-bezier(0.4, 0.0, 0.6, 1.0) infinite;
+  gap: 0.5rem;
+  animation: wb-sway 5s ease-in-out infinite;
   will-change: transform;
+  transition: border-color 0.3s;
 }
-.wind-item {
-  padding: 1.5rem 1.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  flex-shrink: 0;
-  animation: wind-depth 6s ease-in-out infinite;
-}
-.wind-item:nth-child(2n)  { animation-delay: 1s; }
-.wind-item:nth-child(3n)  { animation-delay: 2.5s; }
-.wind-item:nth-child(4n)  { animation-delay: 0.8s; }
-.wind-num {
+.wb-item:hover { border-color: rgba(200,169,110,0.4); }
+.wb-item:nth-child(2) { animation-duration: 6.2s; }
+.wb-item:nth-child(3) { animation-duration: 4.8s; }
+.wb-item:nth-child(4) { animation-duration: 7s;   }
+.wb-item:nth-child(5) { animation-duration: 5.5s; }
+.wb-item:nth-child(6) { animation-duration: 6.8s; }
+.wb-num {
   font-size: 0.6rem;
   letter-spacing: 0.22em;
   color: var(--gold);
   font-weight: 700;
   text-transform: uppercase;
 }
-.wind-title {
+.wb-title {
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.2;
   font-family: var(--font-heading), sans-serif;
 }
-.wind-text {
+.wb-text {
   font-size: 0.78rem;
-  line-height: 1.5;
+  line-height: 1.55;
   opacity: 0.45;
+  margin-top: 0.15rem;
+}
+@media (max-width: 900px) {
+  .wb-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .wb-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Expertise / Univers ── */
@@ -572,23 +551,14 @@ h1 {
   position: relative;
   overflow: hidden;
 }
-.material {
-  width: 100%; height: 100%;
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transition: transform 0.5s;
+  display: block;
 }
-.product-card:hover .material { transform: scale(1.05); }
-.material-vitrage {
-  background: linear-gradient(135deg, #1a2a3a 0%, #2a4a6a 40%, rgba(200,169,110,0.2) 100%);
-}
-.material-miroiterie {
-  background: linear-gradient(135deg, #1a1a2a 0%, #2a2a4a 50%, rgba(255,255,255,0.15) 100%);
-}
-.material-profilés {
-  background: linear-gradient(135deg, #2a2a1a 0%, #4a3a1a 50%, rgba(200,169,110,0.3) 100%);
-}
-.material-accessoires {
-  background: linear-gradient(135deg, #1a2a1a 0%, #2a3a2a 50%, rgba(100,200,100,0.15) 100%);
-}
+.product-card:hover .product-img { transform: scale(1.06); }
 .product-visual .badge-wrap {
   position: absolute;
   top: 12px; left: 12px;

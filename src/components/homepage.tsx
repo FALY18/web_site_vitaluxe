@@ -10,33 +10,7 @@ import type { Product } from '@/lib/type_catalog'
 import { ProductCatalog } from './ui/vitaluxe/product_catalog'
 import { SiteHeader } from './ui/vitaluxe/site_header'
 import { BrandMark } from './ui/vitaluxe/brand_mark'
-
-const windItems = [
-  { number: '01', title: 'Prix professionnels', text: 'Tarifs gros volumes adaptés aux professionnels du bâtiment et de la décoration.' },
-  { number: '02', title: 'Livraison sur demande', text: 'Nous organisons la livraison selon vos délais et la taille de votre commande.' },
-  { number: '03', title: 'Vitrage · Miroiterie', text: 'Une gamme complète de vitrages et miroirs pour tous types de projets.' },
-  { number: '04', title: 'Profilés aluminium', text: 'Profilés de précision pour menuiseries, façades et structures légères.' },
-  { number: '05', title: 'Stock disponible', text: 'Produits en stock permanent à Talatamaty, disponibles immédiatement.' },
-  { number: '06', title: 'Conseil terrain', text: 'Notre équipe vous guide dans le choix des matériaux selon votre chantier.' },
-]
-
-function WindBanner() {
-  return (
-    <div className="wind-banner">
-      <div className="wind-card">
-        <div className="wind-track-v">
-          {[...windItems, ...windItems].map((item, i) => (
-            <div key={i} className="wind-item">
-              <span className="wind-num">{item.number}</span>
-              <strong className="wind-title">{item.title}</strong>
-              <p className="wind-text">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
+import { WindBanner } from './ui/vitaluxe/wind_banner'
 
 
 function HeroSection() {

@@ -1,39 +1,8 @@
-import type { Product } from '@/lib/type_catalog'
+import { products } from '@/lib/mock/data'
 
-export const mockCategories = ['Tous', 'Vitrage', 'Miroiterie', 'Profilés', 'Accessoires'] as const
+export const mockCategories = ['Tous', 'Vitrage', 'Miroiterie', 'Portes', 'Profilés', 'Accessoires'] as const
 
-export const mockProducts: Product[] = [
-  {
-    id: 'vitrine-ldp',
-    name: 'Vitrine de sécurité LDP',
-    category: 'Vitrage',
-    price: 'À partir de 150 000 Ar',
-    unit: 'par m²',
-    badge: 'Best seller',
-  },
-  {
-    id: 'miroir-stand',
-    name: 'Miroir de salle de bain standard',
-    category: 'Miroiterie',
-    price: 'À partir de 55 000 Ar',
-    unit: 'unité',
-    badge: 'Stock',
-  },
-  {
-    id: 'profil-alu',
-    name: 'Profilé aluminium premium',
-    category: 'Profilés',
-    price: 'À partir de 32 000 Ar',
-    unit: 'ml',
-  },
-  {
-    id: 'joint-silicone',
-    name: 'Joint silicone haute résistance',
-    category: 'Accessoires',
-    price: 'À partir de 9 000 Ar',
-    unit: 'boîte',
-  },
-]
+export const mockProducts = products
 
 export const mockExpertise = [
   {
@@ -44,7 +13,7 @@ export const mockExpertise = [
   {
     number: '02',
     title: 'Conseil terrain',
-    text: 'On vous aide à choisir les bonnes épaisseurs, finitions et solutions selon votre usage et votre budget.',
+    text: "On vous aide à choisir les bonnes épaisseurs, finitions et solutions selon votre usage et votre budget.",
   },
   {
     number: '03',
