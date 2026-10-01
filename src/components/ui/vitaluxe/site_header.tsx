@@ -42,6 +42,11 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
           <a className="phone-link" href={contactConfig.phoneUrl}>
             {contactConfig.phoneDisplay}
           </a>
+          <a href="/login" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm" className="hidden md:inline-flex border-[#c8a96e]/40 text-[#c8a96e] hover:bg-[#c8a96e]/10 hover:border-[#c8a96e]">
+              Connexion
+            </Button>
+          </a>
           <Button
             variant="ghost"
             size="icon"

@@ -1,0 +1,1510 @@
+{
+  "id": "086262e1-55be-444b-aded-dfb5ae51ed93",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.article": {
+      "name": "article",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "designation": {
+          "name": "designation",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "categorie_id": {
+          "name": "categorie_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "type_article",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "couleur": {
+          "name": "couleur",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unite_vente": {
+          "name": "unite_vente",
+          "type": "unite_vente",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prix_vente": {
+          "name": "prix_vente",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "article_code_key": {
+          "name": "article_code_key",
+          "columns": [
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_article_categorie": {
+          "name": "idx_article_categorie",
+          "columns": [
+            {
+              "expression": "categorie_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_article_type": {
+          "name": "idx_article_type",
+          "columns": [
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "article_categorie_id_categorie_id_fk": {
+          "name": "article_categorie_id_categorie_id_fk",
+          "tableFrom": "article",
+          "tableTo": "categorie",
+          "columnsFrom": [
+            "categorie_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_article_prix": {
+          "name": "ck_article_prix",
+          "value": "\"article\".\"prix_vente\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.article_alu_detail": {
+      "name": "article_alu_detail",
+      "schema": "",
+      "columns": {
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "prix_pack": {
+          "name": "prix_pack",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre_par_pack": {
+          "name": "nombre_par_pack",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stock_barres": {
+          "name": "stock_barres",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "emplacement": {
+          "name": "emplacement",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "article_alu_detail_article_id_article_id_fk": {
+          "name": "article_alu_detail_article_id_article_id_fk",
+          "tableFrom": "article_alu_detail",
+          "tableTo": "article",
+          "columnsFrom": [
+            "article_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_alu_prix_pack": {
+          "name": "ck_alu_prix_pack",
+          "value": "\"article_alu_detail\".\"prix_pack\" >= 0"
+        },
+        "ck_alu_nombre_pack": {
+          "name": "ck_alu_nombre_pack",
+          "value": "\"article_alu_detail\".\"nombre_par_pack\" > 0"
+        },
+        "ck_alu_stock": {
+          "name": "ck_alu_stock",
+          "value": "\"article_alu_detail\".\"stock_barres\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.article_vitre_detail": {
+      "name": "article_vitre_detail",
+      "schema": "",
+      "columns": {
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "epaisseur_mm": {
+          "name": "epaisseur_mm",
+          "type": "numeric(5, 1)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prix_plateau_entier": {
+          "name": "prix_plateau_entier",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prix_plateau_gros": {
+          "name": "prix_plateau_gros",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "article_vitre_detail_article_id_article_id_fk": {
+          "name": "article_vitre_detail_article_id_article_id_fk",
+          "tableFrom": "article_vitre_detail",
+          "tableTo": "article",
+          "columnsFrom": [
+            "article_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_vitre_epaisseur": {
+          "name": "ck_vitre_epaisseur",
+          "value": "\"article_vitre_detail\".\"epaisseur_mm\" > 0"
+        },
+        "ck_vitre_prix_entier": {
+          "name": "ck_vitre_prix_entier",
+          "value": "\"article_vitre_detail\".\"prix_plateau_entier\" >= 0"
+        },
+        "ck_vitre_prix_gros": {
+          "name": "ck_vitre_prix_gros",
+          "value": "\"article_vitre_detail\".\"prix_plateau_gros\" IS NULL OR \"article_vitre_detail\".\"prix_plateau_gros\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.categorie": {
+      "name": "categorie",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "categorie_nom_key": {
+          "name": "categorie_nom_key",
+          "columns": [
+            {
+              "expression": "nom",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.client": {
+      "name": "client",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adresse": {
+          "name": "adresse",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.facture": {
+      "name": "facture",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vente_id": {
+          "name": "vente_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_emission": {
+          "name": "date_emission",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "total_ht": {
+          "name": "total_ht",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "montant_tva": {
+          "name": "montant_tva",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "total_ttc": {
+          "name": "total_ttc",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_facture",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'brouillon'"
+        }
+      },
+      "indexes": {
+        "facture_numero_key": {
+          "name": "facture_numero_key",
+          "columns": [
+            {
+              "expression": "numero",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_facture_vente": {
+          "name": "idx_facture_vente",
+          "columns": [
+            {
+              "expression": "vente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_facture_statut": {
+          "name": "idx_facture_statut",
+          "columns": [
+            {
+              "expression": "statut",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "facture_vente_id_vente_id_fk": {
+          "name": "facture_vente_id_vente_id_fk",
+          "tableFrom": "facture",
+          "tableTo": "vente",
+          "columnsFrom": [
+            "vente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_facture_montants": {
+          "name": "ck_facture_montants",
+          "value": "\"facture\".\"total_ht\" >= 0 AND \"facture\".\"montant_tva\" >= 0 AND \"facture\".\"total_ttc\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ligne_vente": {
+      "name": "ligne_vente",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vente_id": {
+          "name": "vente_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plateau_id": {
+          "name": "plateau_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mode": {
+          "name": "mode",
+          "type": "mode_ligne",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "longueur_m": {
+          "name": "longueur_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hauteur_m": {
+          "name": "hauteur_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantite_facturee": {
+          "name": "quantite_facturee",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prix_applique": {
+          "name": "prix_applique",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "montant": {
+          "name": "montant",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "surface_restante_apres": {
+          "name": "surface_restante_apres",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longueur_controlee_m": {
+          "name": "longueur_controlee_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hauteur_controlee_m": {
+          "name": "hauteur_controlee_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nombre_controle": {
+          "name": "nombre_controle",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "idx_ligne_vente_vente": {
+          "name": "idx_ligne_vente_vente",
+          "columns": [
+            {
+              "expression": "vente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_ligne_vente_article": {
+          "name": "idx_ligne_vente_article",
+          "columns": [
+            {
+              "expression": "article_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_ligne_vente_plateau": {
+          "name": "idx_ligne_vente_plateau",
+          "columns": [
+            {
+              "expression": "plateau_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ligne_vente_vente_id_vente_id_fk": {
+          "name": "ligne_vente_vente_id_vente_id_fk",
+          "tableFrom": "ligne_vente",
+          "tableTo": "vente",
+          "columnsFrom": [
+            "vente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ligne_vente_article_id_article_id_fk": {
+          "name": "ligne_vente_article_id_article_id_fk",
+          "tableFrom": "ligne_vente",
+          "tableTo": "article",
+          "columnsFrom": [
+            "article_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "ligne_vente_plateau_id_plateau_id_fk": {
+          "name": "ligne_vente_plateau_id_plateau_id_fk",
+          "tableFrom": "ligne_vente",
+          "tableTo": "plateau",
+          "columnsFrom": [
+            "plateau_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_ligne_nombre": {
+          "name": "ck_ligne_nombre",
+          "value": "\"ligne_vente\".\"nombre\" > 0"
+        },
+        "ck_ligne_longueur": {
+          "name": "ck_ligne_longueur",
+          "value": "\"ligne_vente\".\"longueur_m\" IS NULL OR \"ligne_vente\".\"longueur_m\" > 0"
+        },
+        "ck_ligne_hauteur": {
+          "name": "ck_ligne_hauteur",
+          "value": "\"ligne_vente\".\"hauteur_m\" IS NULL OR \"ligne_vente\".\"hauteur_m\" > 0"
+        },
+        "ck_ligne_quantite": {
+          "name": "ck_ligne_quantite",
+          "value": "\"ligne_vente\".\"quantite_facturee\" >= 0"
+        },
+        "ck_ligne_prix": {
+          "name": "ck_ligne_prix",
+          "value": "\"ligne_vente\".\"prix_applique\" >= 0"
+        },
+        "ck_ligne_montant": {
+          "name": "ck_ligne_montant",
+          "value": "\"ligne_vente\".\"montant\" >= 0"
+        },
+        "ck_ligne_surface_apres": {
+          "name": "ck_ligne_surface_apres",
+          "value": "\"ligne_vente\".\"surface_restante_apres\" IS NULL OR \"ligne_vente\".\"surface_restante_apres\" >= 0"
+        },
+        "ck_ligne_nombre_controle": {
+          "name": "ck_ligne_nombre_controle",
+          "value": "\"ligne_vente\".\"nombre_controle\" IS NULL OR \"ligne_vente\".\"nombre_controle\" >= 0"
+        },
+        "ck_ligne_plateau_entier": {
+          "name": "ck_ligne_plateau_entier",
+          "value": "\"ligne_vente\".\"mode\" NOT IN ('plateau_entier', 'plateau_gros')\n        OR (\"ligne_vente\".\"nombre\" = 1 AND \"ligne_vente\".\"plateau_id\" IS NOT NULL)"
+        },
+        "ck_ligne_decoupe": {
+          "name": "ck_ligne_decoupe",
+          "value": "\"ligne_vente\".\"mode\" <> 'decoupe'\n        OR (\"ligne_vente\".\"plateau_id\" IS NOT NULL\n            AND \"ligne_vente\".\"longueur_m\" IS NOT NULL\n            AND \"ligne_vente\".\"hauteur_m\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.mouvement_stock": {
+      "name": "mouvement_stock",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plateau_id": {
+          "name": "plateau_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ligne_vente_id": {
+          "name": "ligne_vente_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "type_mouvement",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantite": {
+          "name": "quantite",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stock_apres": {
+          "name": "stock_apres",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "motif": {
+          "name": "motif",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_heure": {
+          "name": "date_heure",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_mvt_article": {
+          "name": "idx_mvt_article",
+          "columns": [
+            {
+              "expression": "article_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date_heure",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_mvt_plateau": {
+          "name": "idx_mvt_plateau",
+          "columns": [
+            {
+              "expression": "plateau_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date_heure",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_mvt_ligne": {
+          "name": "idx_mvt_ligne",
+          "columns": [
+            {
+              "expression": "ligne_vente_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_mvt_user": {
+          "name": "idx_mvt_user",
+          "columns": [
+            {
+              "expression": "utilisateur_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "mouvement_stock_article_id_article_id_fk": {
+          "name": "mouvement_stock_article_id_article_id_fk",
+          "tableFrom": "mouvement_stock",
+          "tableTo": "article",
+          "columnsFrom": [
+            "article_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "mouvement_stock_plateau_id_plateau_id_fk": {
+          "name": "mouvement_stock_plateau_id_plateau_id_fk",
+          "tableFrom": "mouvement_stock",
+          "tableTo": "plateau",
+          "columnsFrom": [
+            "plateau_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "mouvement_stock_ligne_vente_id_ligne_vente_id_fk": {
+          "name": "mouvement_stock_ligne_vente_id_ligne_vente_id_fk",
+          "tableFrom": "mouvement_stock",
+          "tableTo": "ligne_vente",
+          "columnsFrom": [
+            "ligne_vente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "mouvement_stock_utilisateur_id_utilisateur_id_fk": {
+          "name": "mouvement_stock_utilisateur_id_utilisateur_id_fk",
+          "tableFrom": "mouvement_stock",
+          "tableTo": "utilisateur",
+          "columnsFrom": [
+            "utilisateur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.paiement": {
+      "name": "paiement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "facture_id": {
+          "name": "facture_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "montant": {
+          "name": "montant",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "mode_paiement",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_paiement_facture": {
+          "name": "idx_paiement_facture",
+          "columns": [
+            {
+              "expression": "facture_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "paiement_facture_id_facture_id_fk": {
+          "name": "paiement_facture_id_facture_id_fk",
+          "tableFrom": "paiement",
+          "tableTo": "facture",
+          "columnsFrom": [
+            "facture_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_paiement_montant": {
+          "name": "ck_paiement_montant",
+          "value": "\"paiement\".\"montant\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.parametre_societe": {
+      "name": "parametre_societe",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adresse": {
+          "name": "adresse",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telephone": {
+          "name": "telephone",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nif": {
+          "name": "nif",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stat": {
+          "name": "stat",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prochain_numero_vente": {
+          "name": "prochain_numero_vente",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "prochain_numero_facture": {
+          "name": "prochain_numero_facture",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "tolerance_mesure_m": {
+          "name": "tolerance_mesure_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0.005'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_parametre_unique": {
+          "name": "ck_parametre_unique",
+          "value": "\"parametre_societe\".\"id\" = 1"
+        },
+        "ck_parametre_num_vente": {
+          "name": "ck_parametre_num_vente",
+          "value": "\"parametre_societe\".\"prochain_numero_vente\" > 0"
+        },
+        "ck_parametre_num_facture": {
+          "name": "ck_parametre_num_facture",
+          "value": "\"parametre_societe\".\"prochain_numero_facture\" > 0"
+        },
+        "ck_parametre_tolerance": {
+          "name": "ck_parametre_tolerance",
+          "value": "\"parametre_societe\".\"tolerance_mesure_m\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.plateau": {
+      "name": "plateau",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "article_id": {
+          "name": "article_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "longueur_origine_m": {
+          "name": "longueur_origine_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hauteur_origine_m": {
+          "name": "hauteur_origine_m",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "surface_restante_m2": {
+          "name": "surface_restante_m2",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emplacement": {
+          "name": "emplacement",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_plateau",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'disponible'"
+        }
+      },
+      "indexes": {
+        "idx_plateau_article": {
+          "name": "idx_plateau_article",
+          "columns": [
+            {
+              "expression": "article_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_plateau_statut": {
+          "name": "idx_plateau_statut",
+          "columns": [
+            {
+              "expression": "statut",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "plateau_article_id_article_id_fk": {
+          "name": "plateau_article_id_article_id_fk",
+          "tableFrom": "plateau",
+          "tableTo": "article",
+          "columnsFrom": [
+            "article_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_plateau_longueur": {
+          "name": "ck_plateau_longueur",
+          "value": "\"plateau\".\"longueur_origine_m\" > 0"
+        },
+        "ck_plateau_hauteur": {
+          "name": "ck_plateau_hauteur",
+          "value": "\"plateau\".\"hauteur_origine_m\" > 0"
+        },
+        "ck_plateau_surface": {
+          "name": "ck_plateau_surface",
+          "value": "\"plateau\".\"surface_restante_m2\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.utilisateur": {
+      "name": "utilisateur",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "identifiant": {
+          "name": "identifiant",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mot_de_passe_hash": {
+          "name": "mot_de_passe_hash",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "utilisateur_identifiant_key": {
+          "name": "utilisateur_identifiant_key",
+          "columns": [
+            {
+              "expression": "identifiant",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vente": {
+      "name": "vente",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "numero": {
+          "name": "numero",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "client_id": {
+          "name": "client_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "commercial_id": {
+          "name": "commercial_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_vente",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'brouillon'"
+        },
+        "total": {
+          "name": "total",
+          "type": "numeric(14, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        }
+      },
+      "indexes": {
+        "vente_numero_key": {
+          "name": "vente_numero_key",
+          "columns": [
+            {
+              "expression": "numero",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_vente_client": {
+          "name": "idx_vente_client",
+          "columns": [
+            {
+              "expression": "client_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_vente_commercial": {
+          "name": "idx_vente_commercial",
+          "columns": [
+            {
+              "expression": "commercial_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_vente_statut": {
+          "name": "idx_vente_statut",
+          "columns": [
+            {
+              "expression": "statut",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vente_client_id_client_id_fk": {
+          "name": "vente_client_id_client_id_fk",
+          "tableFrom": "vente",
+          "tableTo": "client",
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "vente_commercial_id_utilisateur_id_fk": {
+          "name": "vente_commercial_id_utilisateur_id_fk",
+          "tableFrom": "vente",
+          "tableTo": "utilisateur",
+          "columnsFrom": [
+            "commercial_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_vente_total": {
+          "name": "ck_vente_total",
+          "value": "\"vente\".\"total\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.mode_ligne": {
+      "name": "mode_ligne",
+      "schema": "public",
+      "values": [
+        "decoupe",
+        "plateau_entier",
+        "plateau_gros",
+        "barre",
+        "pack",
+        "standard"
+      ]
+    },
+    "public.mode_paiement": {
+      "name": "mode_paiement",
+      "schema": "public",
+      "values": [
+        "especes",
+        "mobile_money",
+        "virement",
+        "cheque"
+      ]
+    },
+    "public.role": {
+      "name": "role",
+      "schema": "public",
+      "values": [
+        "commercial",
+        "depot",
+        "admin"
+      ]
+    },
+    "public.statut_facture": {
+      "name": "statut_facture",
+      "schema": "public",
+      "values": [
+        "brouillon",
+        "emise",
+        "partielle",
+        "payee",
+        "annulee"
+      ]
+    },
+    "public.statut_plateau": {
+      "name": "statut_plateau",
+      "schema": "public",
+      "values": [
+        "disponible",
+        "epuise",
+        "vendu_entier"
+      ]
+    },
+    "public.statut_vente": {
+      "name": "statut_vente",
+      "schema": "public",
+      "values": [
+        "brouillon",
+        "confirmee",
+        "livree",
+        "annulee"
+      ]
+    },
+    "public.type_article": {
+      "name": "type_article",
+      "schema": "public",
+      "values": [
+        "vitre",
+        "alu",
+        "accessoire",
+        "service"
+      ]
+    },
+    "public.type_mouvement": {
+      "name": "type_mouvement",
+      "schema": "public",
+      "values": [
+        "reception",
+        "vente",
+        "annulation",
+        "ajustement"
+      ]
+    },
+    "public.unite_vente": {
+      "name": "unite_vente",
+      "schema": "public",
+      "values": [
+        "m2",
+        "barre",
+        "unite",
+        "forfait",
+        "heure"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
