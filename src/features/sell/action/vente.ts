@@ -24,13 +24,18 @@ export async function createVente(
   const session = await getSession()
   if (!session) return { error: 'Non authentifié.' }
 
+  const clientIdRaw = formData.get('clientId') as string
   const clientNom = (formData.get('clientNom') as string)?.trim()
   const clientTel = (formData.get('clientTel') as string)?.trim() || null
   const date = (formData.get('date') as string) || new Date().toISOString().slice(0, 10)
 
-  if (!clientNom) return { error: 'Le nom du client est requis.' }
-
-  const clientId = await upsertClient(clientNom, clientTel)
+  let clientId: number
+  if (clientIdRaw && clientIdRaw !== '') {
+    clientId = Number(clientIdRaw)
+  } else {
+    if (!clientNom) return { error: 'Le nom du client est requis.' }
+    clientId = await upsertClient(clientNom, clientTel)
+  }
 
   const [v] = await db
     .insert(vente)

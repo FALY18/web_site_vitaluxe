@@ -10,16 +10,20 @@ import {
   Layers,
   Users,
   Settings,
+  UserRound,
+  Grid2x2,
 } from 'lucide-react'
 import type { Role } from '@/features/auth/types'
 
 const NAV = [
-  { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard, roles: ['admin', 'commercial', 'depot'] },
-  { href: '/dashboard/ventes', label: 'Ventes', icon: ShoppingCart, roles: ['admin', 'commercial'] },
-  { href: '/dashboard/articles', label: 'Articles', icon: Package, roles: ['admin', 'commercial', 'depot'] },
-  { href: '/dashboard/stock', label: 'Stock', icon: Layers, roles: ['admin', 'depot'] },
-  { href: '/dashboard/utilisateurs', label: 'Utilisateurs', icon: Users, roles: ['admin'] },
-  { href: '/dashboard/parametres', label: 'Paramètres', icon: Settings, roles: ['admin'] },
+  { href: '/dashboard',              label: 'Tableau de bord', icon: LayoutDashboard, roles: ['admin', 'commercial', 'depot'] },
+  { href: '/dashboard/ventes',       label: 'Ventes',          icon: ShoppingCart,    roles: ['admin', 'commercial'] },
+  { href: '/dashboard/clients',      label: 'Clients',         icon: UserRound,       roles: ['admin', 'commercial'] },
+  { href: '/dashboard/articles',     label: 'Articles',        icon: Package,         roles: ['admin', 'commercial', 'depot'] },
+  { href: '/dashboard/plateaux',     label: 'Plateaux',        icon: Grid2x2,         roles: ['admin', 'depot'] },
+  { href: '/dashboard/stock',        label: 'Stock',           icon: Layers,          roles: ['admin', 'depot'] },
+  { href: '/dashboard/utilisateurs', label: 'Utilisateurs',    icon: Users,           roles: ['admin'] },
+  { href: '/dashboard/parametres',   label: 'Paramètres',      icon: Settings,        roles: ['admin'] },
 ] as const
 
 export function SidebarNav({ role }: { role: Role }) {
