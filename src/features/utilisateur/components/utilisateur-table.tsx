@@ -1,9 +1,4 @@
-'use client'
-
-import { deleteUtilisateur } from '../action/utilisateur'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { DeleteUtilisateurButton } from './delete-utilisateur-button'
 import type { UtilisateurRow } from '../types'
 
 const roleBadge: Record<string, string> = {
@@ -41,13 +36,7 @@ export function UtilisateurTable({ users, currentUserId }: { users: UtilisateurR
                 </span>
               </td>
               <td className="px-4 py-3">
-                {u.id !== currentUserId && (
-                  <form action={async () => { 'use server'; await deleteUtilisateur(u.id) }}>
-                    <Button variant="ghost" size="icon-sm" type="submit" className="text-muted-foreground hover:text-destructive">
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </form>
-                )}
+                {u.id !== currentUserId && <DeleteUtilisateurButton id={u.id} />}
               </td>
             </tr>
           ))}
