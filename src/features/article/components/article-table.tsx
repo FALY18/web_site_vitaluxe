@@ -44,13 +44,28 @@ export function ArticleTable({ articles, role }: { articles: ArticleWithDetail[]
               <td className="px-4 py-3"><TypeBadge type={a.type} /></td>
               <td className="px-4 py-3 text-xs text-muted-foreground">{a.categorieNom}</td>
               <td className="px-4 py-3"><UniteBadge unite={a.uniteVente} /></td>
-              <td className="px-4 py-3 text-right font-medium text-[#c8a96e]">{formatAr(a.prixVente)}</td>
+              <td className="px-4 py-3 text-right">
+                <span className="font-medium text-[#c8a96e]">{formatAr(a.prixVente)}</span>
+                <span className="block text-[10px] text-muted-foreground">
+                  {a.type === 'vitre' ? '/m²' : a.type === 'alu' ? '/barre' : '/unité'}
+                </span>
+              </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">
                 {a.type === 'vitre' && a.vitreDetail && (
-                  <span>{a.vitreDetail.epaisseurMm} mm · {formatAr(a.vitreDetail.prixPlateauEntier)}/plateau</span>
+                  <span className="flex flex-col gap-0.5">
+                    <span>{a.vitreDetail.epaisseurMm} mm</span>
+                    <span>Plateau entier : {formatAr(a.vitreDetail.prixPlateauEntier)}</span>
+                    {a.vitreDetail.prixPlateauGros && (
+                      <span>Gros plateau : {formatAr(a.vitreDetail.prixPlateauGros)}</span>
+                    )}
+                  </span>
                 )}
                 {a.type === 'alu' && a.aluDetail && (
-                  <span>Stock: {a.aluDetail.stockBarres} barres · {a.aluDetail.nombreParPack}/pack</span>
+                  <span className="flex flex-col gap-0.5">
+                    <span>Pack {a.aluDetail.nombreParPack} barres : {formatAr(a.aluDetail.prixPack)}</span>
+                    <span>Stock : {a.aluDetail.stockBarres} barres</span>
+                    {a.aluDetail.emplacement && <span>Empl. : {a.aluDetail.emplacement}</span>}
+                  </span>
                 )}
               </td>
               {canEdit && (

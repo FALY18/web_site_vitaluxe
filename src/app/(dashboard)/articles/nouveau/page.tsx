@@ -27,7 +27,7 @@ export default async function NouvelArticlePage() {
           description="Remplissez les informations du nouvel article"
         />
       </div>
-
+      
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Informations article</CardTitle>

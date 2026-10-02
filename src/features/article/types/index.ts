@@ -51,9 +51,17 @@ export const UNITE_LABELS: Record<UniteVente, string> = {
   heure: 'Heure',
 }
 
+// Unités autorisées par type
+export const TYPE_UNITES: Record<TypeArticle, UniteVente[]> = {
+  vitre:      ['m2'],
+  alu:        ['barre', 'unite'],
+  accessoire: ['unite', 'forfait'],
+  service:    ['forfait', 'heure'],
+}
+
 export const TYPE_UNITE_DEFAULT: Record<TypeArticle, UniteVente> = {
-  vitre: 'm2',
-  alu: 'barre',
+  vitre:      'm2',
+  alu:        'barre',
   accessoire: 'unite',
-  service: 'forfait',
+  service:    'forfait',
 }
