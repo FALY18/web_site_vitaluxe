@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import type { SessionUser } from '../types'
+import type { SessionUser } from './types/index'
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET ?? 'vitaluxe-secret-dev')
 const COOKIE = 'vtlx_session'
