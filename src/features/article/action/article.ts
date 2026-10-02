@@ -5,7 +5,7 @@ import { article, articleVitreDetail, articleAluDetail } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/features/auth/session'
-import type { ArticleFormState } from '../types'
+import type { ArticleFormState, TypeArticle } from '../types'
 
 export async function createArticle(
   _prev: ArticleFormState,
@@ -14,22 +14,38 @@ export async function createArticle(
   const session = await getSession()
   if (!session || session.role === 'commercial') return { error: 'Accès refusé.' }
 
-  const code = (formData.get('code') as string)?.trim()
   const designation = (formData.get('designation') as string)?.trim()
   const categorieId = Number(formData.get('categorieId'))
-  const type = formData.get('type') as string
+  const type = formData.get('type') as TypeArticle
   const couleur = (formData.get('couleur') as string)?.trim() || null
   const uniteVente = formData.get('uniteVente') as string
   const prixVente = formData.get('prixVente') as string
 
-  if (!code || !designation || !categorieId || !type || !uniteVente || !prixVente) {
+  if (!designation || !categorieId || !type || !uniteVente || !prixVente) {
     return { error: 'Tous les champs obligatoires sont requis.' }
   }
+
+  // Pour "service" : code obligatoire manuellement (trigger refuse si vide)
+  const codeManuel = (formData.get('code') as string)?.trim()
+  if (type === 'service' && !codeManuel) {
+    return { error: 'Le code article est obligatoire pour un service.' }
+  }
+
+  // Pour vitre/alu/accessoire : on passe '' → le trigger génère le code
+  const codeInsert = type === 'service' ? codeManuel : ''
 
   try {
     const [created] = await db
       .insert(article)
-      .values({ code, designation, categorieId, type: type as 'vitre' | 'alu' | 'accessoire' | 'service', couleur, uniteVente: uniteVente as 'm2' | 'barre' | 'unite' | 'forfait' | 'heure', prixVente })
+      .values({
+        code: codeInsert,
+        designation,
+        categorieId,
+        type,
+        couleur,
+        uniteVente: uniteVente as 'm2' | 'barre' | 'unite' | 'forfait' | 'heure',
+        prixVente,
+      })
       .returning({ id: article.id })
 
     if (type === 'vitre') {
@@ -37,7 +53,12 @@ export async function createArticle(
       const prixPlateauEntier = formData.get('prixPlateauEntier') as string
       const prixPlateauGros = (formData.get('prixPlateauGros') as string) || null
       if (!epaisseurMm || !prixPlateauEntier) return { error: 'Détails vitre requis.' }
-      await db.insert(articleVitreDetail).values({ articleId: created.id, epaisseurMm, prixPlateauEntier, prixPlateauGros })
+      await db.insert(articleVitreDetail).values({
+        articleId: created.id,
+        epaisseurMm,
+        prixPlateauEntier,
+        prixPlateauGros,
+      })
     }
 
     if (type === 'alu') {
@@ -45,13 +66,21 @@ export async function createArticle(
       const nombreParPack = Number(formData.get('nombreParPack'))
       const emplacement = (formData.get('emplacement') as string)?.trim() || null
       if (!prixPack || !nombreParPack) return { error: 'Détails aluminium requis.' }
-      await db.insert(articleAluDetail).values({ articleId: created.id, prixPack, nombreParPack, emplacement })
+      await db.insert(articleAluDetail).values({
+        articleId: created.id,
+        prixPack,
+        nombreParPack,
+        emplacement,
+      })
     }
 
     revalidatePath('/dashboard/articles')
     return { success: true }
-  } catch {
-    return { error: 'Code article déjà utilisé.' }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : ''
+    if (msg.includes('manuellement')) return { error: msg }
+    if (msg.includes('unique') || msg.includes('duplicate')) return { error: 'Code article déjà utilisé.' }
+    return { error: 'Erreur lors de la création.' }
   }
 }
 

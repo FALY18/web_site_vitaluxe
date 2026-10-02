@@ -7,7 +7,6 @@ import 'dotenv/config'
 import { db } from "./index";
 import { parametreSociete, categorie } from "./schema";
 
-
 async function main() {
   // Paramètres de la société (une seule ligne : id = 1)
   await db
@@ -19,8 +18,6 @@ async function main() {
       telephone: "0389657777",
       nif: "A_COMPLETER",
       stat: "A_COMPLETER",
-      prochainNumeroVente: 1147, // dernier bon connu : 1146
-      prochainNumeroFacture: 1,
       toleranceMesureM: "0.005", // 5 mm, à ajuster
     })
     .onConflictDoNothing();

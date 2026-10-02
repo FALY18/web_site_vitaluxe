@@ -1,7 +1,15 @@
 // =====================================================================
-// VITALUXE - src/db/schema.ts (Phase 1)
+// VITALUXE - src/db/schema.ts (Phase 1) - VERSION À JOUR
 // Drizzle ORM + PostgreSQL + Next.js (TypeScript)
-// Les CHECK non exprimables ici et le trigger sont dans constraints.sql
+//
+// Génération automatique (voir drizzle/003 et drizzle/004, exécutés à
+// part sur la base car Drizzle ne génère pas de triggers) :
+//   - Article.code    : rempli par la base si vide (VIT-/ALU-/ACC-)
+//   - Vente.numero    : rempli par la base si 0 (séquence à partir de 1147)
+//   - Facture.numero  : rempli par la base si vide (FAC-000001...)
+// Les .default(sql`...`) ci-dessous servent UNIQUEMENT à ce que
+// TypeScript n'exige plus ces champs à l'insertion ; la vraie valeur
+// est écrite par le trigger côté PostgreSQL.
 // =====================================================================
 
 import {
@@ -119,10 +127,14 @@ export const categorie = pgTable("categorie", {
 
 // ---------------------------------------------------------------------
 // 4. Article (tout ce qui se vend)
+// code : rempli automatiquement par le trigger PostgreSQL pour vitre /
+// alu / accessoire (VIT-000001, ALU-000001, ACC-000001...). Pour
+// "service", le trigger refuse l'insertion si le code est vide : il
+// faut alors le fournir ici à la main.
 // ---------------------------------------------------------------------
 export const article = pgTable("article", {
   id: serial("id").primaryKey(),
-  code: varchar("code", { length: 30 }).notNull(),
+  code: varchar("code", { length: 30 }).notNull().default(sql`''`),
   designation: varchar("designation", { length: 200 }).notNull(),
   categorieId: integer("categorie_id")
     .notNull()
@@ -221,10 +233,12 @@ export const plateau = pgTable("plateau", {
 
 // ---------------------------------------------------------------------
 // 8. Vente
+// numero : rempli automatiquement par le trigger PostgreSQL (séquence
+// qui démarre à 1147, dernier bon papier connu : 1146).
 // ---------------------------------------------------------------------
 export const vente = pgTable("vente", {
   id: serial("id").primaryKey(),
-  numero: integer("numero").notNull(),
+  numero: integer("numero").notNull().default(sql`0`),
   clientId: integer("client_id")
     .notNull()
     .references(() => client.id),
@@ -325,7 +339,7 @@ export const ligneVente = pgTable("ligne_vente", {
 
 // ---------------------------------------------------------------------
 // 10. Mouvement_Stock (historique - jamais modifié ni supprimé)
-// Protection : voir le trigger dans constraints.sql
+// Protection : trigger dans constraints.sql
 // ---------------------------------------------------------------------
 export const mouvementStock = pgTable("mouvement_stock", {
   id: serial("id").primaryKey(),
@@ -353,10 +367,12 @@ export const mouvementStock = pgTable("mouvement_stock", {
 
 // ---------------------------------------------------------------------
 // 11. Facture
+// numero : rempli automatiquement par le trigger PostgreSQL
+// (FAC-000001, FAC-000002...).
 // ---------------------------------------------------------------------
 export const facture = pgTable("facture", {
   id: serial("id").primaryKey(),
-  numero: varchar("numero", { length: 20 }).notNull(),
+  numero: varchar("numero", { length: 20 }).notNull().default(sql`''`),
   venteId: integer("vente_id")
     .notNull()
     .references(() => vente.id),
@@ -395,6 +411,9 @@ export const paiement = pgTable("paiement", {
 
 // ---------------------------------------------------------------------
 // 13. Parametre_Societe (une seule ligne : id = 1)
+// prochain_numero_vente et prochain_numero_facture SUPPRIMÉS :
+// remplacés par les séquences seq_numero_vente / seq_numero_facture
+// (voir drizzle/004_auto_numero_vente_facture.sql)
 // ---------------------------------------------------------------------
 export const parametreSociete = pgTable("parametre_societe", {
   id: smallint("id").primaryKey().default(1),
@@ -403,23 +422,11 @@ export const parametreSociete = pgTable("parametre_societe", {
   telephone: varchar("telephone", { length: 30 }),
   nif: varchar("nif", { length: 40 }),
   stat: varchar("stat", { length: 40 }),
-  prochainNumeroVente: integer("prochain_numero_vente").notNull().default(1),
-  prochainNumeroFacture: integer("prochain_numero_facture")
-    .notNull()
-    .default(1),
   toleranceMesureM: numeric("tolerance_mesure_m", { precision: 6, scale: 3 })
     .notNull()
     .default("0.005"),
 }, (t) => ({
   idUnique: check("ck_parametre_unique", sql`${t.id} = 1`),
-  numVentePositif: check(
-    "ck_parametre_num_vente",
-    sql`${t.prochainNumeroVente} > 0`
-  ),
-  numFacturePositif: check(
-    "ck_parametre_num_facture",
-    sql`${t.prochainNumeroFacture} > 0`
-  ),
   tolerancePositive: check(
     "ck_parametre_tolerance",
     sql`${t.toleranceMesureM} >= 0`
