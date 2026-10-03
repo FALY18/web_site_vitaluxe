@@ -15,7 +15,7 @@ export default async function ParametresPage() {
           ['Téléphone', params?.telephone],
           ['NIF', params?.nif],
           ['STAT', params?.stat],
-          ['Tolérance mesure', params?.toleranceMesureM ? `${params.toleranceMesureM} m` : null],
+          ['---------------------------', params?.toleranceMesureM ? `${params.toleranceMesureM} m` : null],
         ] as [string, string | null | undefined][]).map(([label, value]) => (
           <div key={label} className="flex items-center justify-between px-4 py-3">
             <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
