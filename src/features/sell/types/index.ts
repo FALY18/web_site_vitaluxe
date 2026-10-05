@@ -25,6 +25,7 @@ export type LigneVenteRow = {
   quantiteFacturee: string
   prixApplique: string
   montant: string
+  surfaceRestanteApres: string | null
 }
 
 export type VenteDetail = VenteRow & {

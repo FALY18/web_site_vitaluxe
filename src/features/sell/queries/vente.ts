@@ -1,7 +1,8 @@
 import { db } from '@/db'
-import { vente, ligneVente, client, utilisateur, article, plateau } from '@/db/schema'
+import { vente, ligneVente, client, utilisateur, article, plateau, articleVitreDetail, categorie } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import type { VenteRow, VenteDetail, ClientRow, PlateauDisponible } from '../types'
+import type { ArticleWithDetail, TypeArticle, UniteVente } from '@/features/article/types'
 
 export async function getVentes(): Promise<VenteRow[]> {
   const rows = await db
@@ -41,7 +42,7 @@ export async function getVenteById(id: number): Promise<VenteDetail | null> {
 
   if (!v) return null
 
-  const lignes = await db
+    const lignes = await db
     .select({
       id: ligneVente.id,
       venteId: ligneVente.venteId,
@@ -56,6 +57,7 @@ export async function getVenteById(id: number): Promise<VenteDetail | null> {
       quantiteFacturee: ligneVente.quantiteFacturee,
       prixApplique: ligneVente.prixApplique,
       montant: ligneVente.montant,
+      surfaceRestanteApres: ligneVente.surfaceRestanteApres,
     })
     .from(ligneVente)
     .innerJoin(article, eq(ligneVente.articleId, article.id))
@@ -84,5 +86,87 @@ export async function getPlateauxDisponibles(): Promise<PlateauDisponible[]> {
     .where(eq(plateau.statut, 'disponible'))
     .orderBy(article.designation)
 
-  return rows as PlateauDisponible[]
+    return rows as PlateauDisponible[]
+}
+
+// ---------------------------------------------------------------------
+// Article avec détail vitre (pour auto-calcul du prix à la vente)
+// ---------------------------------------------------------------------
+export async function getArticleForSale(
+  id: number,
+): Promise<ArticleWithDetail | null> {
+  const [row] = await db
+    .select({
+      id: article.id,
+      code: article.code,
+      designation: article.designation,
+      categorieId: article.categorieId,
+      categorieNom: categorie.nom,
+      type: article.type,
+      couleur: article.couleur,
+      uniteVente: article.uniteVente,
+      prixVente: article.prixVente,
+      // vitre detail
+      epaisseurMm: articleVitreDetail.epaisseurMm,
+      prixPlateauEntier: articleVitreDetail.prixPlateauEntier,
+      prixPlateauGros: articleVitreDetail.prixPlateauGros,
+    })
+    .from(article)
+    .leftJoin(
+      articleVitreDetail,
+      eq(articleVitreDetail.articleId, article.id),
+    )
+    .leftJoin(categorie, eq(article.categorieId, categorie.id))
+    .where(eq(article.id, id))
+
+  if (!row) return null
+
+  // Ne construire le détail vitre que si l'épaisseur est présente
+  const vitreDetail = row.epaisseurMm
+    ? {
+        epaisseurMm: row.epaisseurMm,
+        prixPlateauEntier: row.prixPlateauEntier,
+        prixPlateauGros: row.prixPlateauGros,
+      }
+    : null
+
+  return {
+    id: row.id,
+    code: row.code,
+    designation: row.designation,
+    categorieId: row.categorieId,
+    categorieNom: row.categorieNom,
+    type: row.type as TypeArticle,
+    couleur: row.couleur,
+    uniteVente: row.uniteVente as UniteVente,
+    prixVente: row.prixVente,
+    vitreDetail,
+    aluDetail: null,
+  } as ArticleWithDetail
+}
+
+// ---------------------------------------------------------------------
+// Plateau par id (pour décrémenter le stock)
+// ---------------------------------------------------------------------
+export async function getPlateauById(id: number): Promise<{
+  id: number
+  articleId: number
+  longueurOrigineM: string
+  hauteurOrigineM: string
+  surfaceRestanteM2: string
+  statut: 'disponible' | 'epuise' | 'vendu_entier'
+} | null> {
+  const [row] = await db
+    .select({
+      id: plateau.id,
+      articleId: plateau.articleId,
+      longueurOrigineM: plateau.longueurOrigineM,
+      hauteurOrigineM: plateau.hauteurOrigineM,
+      surfaceRestanteM2: plateau.surfaceRestanteM2,
+      statut: plateau.statut,
+    })
+    .from(plateau)
+    .where(eq(plateau.id, id))
+
+  return row ?? null
 }
