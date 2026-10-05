@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { article, articleVitreDetail, articleAluDetail, categorie } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import type { ArticleWithDetail, TypeArticle } from '../types'
 
 export async function getArticles(): Promise<ArticleWithDetail[]> {
@@ -45,4 +45,26 @@ export async function getArticles(): Promise<ArticleWithDetail[]> {
 
 export async function getCategories() {
   return db.select().from(categorie).orderBy(categorie.nom)
+}
+
+/**
+ * Vérifie si un article avec la même désignation et le même type existe déjà.
+ * Utilisé avant la création pour éviter les doublons.
+ */
+export async function getArticleByDesignation(
+  designation: string,
+  type: TypeArticle,
+): Promise<{ id: number; code: string } | null> {
+  const [row] = await db
+    .select({ id: article.id, code: article.code })
+    .from(article)
+    .where(
+      and(
+        eq(article.designation, designation),
+        eq(article.type, type),
+      ),
+    )
+    .limit(1)
+
+  return row ?? null
 }

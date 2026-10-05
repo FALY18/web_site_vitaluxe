@@ -5,6 +5,7 @@ import { article, articleVitreDetail, articleAluDetail } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/features/auth/session'
+import { getArticleByDesignation } from '../queries/article'
 import type { ArticleFormState, TypeArticle } from '../types'
 
 export async function createArticle(
@@ -33,6 +34,14 @@ export async function createArticle(
 
   // Pour vitre/alu/accessoire : on passe '' → le trigger génère le code
   const codeInsert = type === 'service' ? codeManuel : ''
+
+  // Vérification des doublons : même désignation + même type
+  const existing = await getArticleByDesignation(designation, type)
+  if (existing) {
+    return {
+      error: `Un article "${designation}" de type "${type}" existe déjà (code: ${existing.code}).`,
+    }
+  }
 
   try {
     const [created] = await db
