@@ -90,7 +90,6 @@ export function ArticleForm({ categories, onSuccess }: Props) {
             Code article
             {isAutoCode ? (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#c8a96e]/10 text-[#c8a96e] border border-[#c8a96e]/20">
-                <Sparkles className="size-2.5" />Automatique
               </span>
             ) : (
               <span className="text-destructive">*</span>
