@@ -256,22 +256,32 @@ export async function deleteLigne(ligneId: number, venteId: number): Promise<voi
         motif: `Annulation vente découpe (ligne ${ligne.id})`,
       })
     } else {
-      // Cas plateau_entier / plateau_gros : remettre le statut à disponible
-      await db
-        .update(plateau)
-        .set({ statut: 'disponible' })
-        .where(eq(plateau.id, ligne.plateauId))
+      // Cas plateau_entier / plateau_gros : restaurer la surface complète du plateau
+      const plateauData = await getPlateauById(ligne.plateauId)
+      if (plateauData) {
+        const surfaceOrigine = (
+          Number(plateauData.longueurOrigineM) * Number(plateauData.hauteurOrigineM)
+        ).toFixed(2)
 
-      await db.insert(mouvementStock).values({
-        articleId: ligne.articleId,
-        plateauId: ligne.plateauId,
-        ligneVenteId: ligne.id,
-        utilisateurId: session.id,
-        type: 'annulation',
-        quantite: '0',
-        stockApres: '0',
-        motif: `Annulation vente ${ligne.mode} (ligne ${ligne.id})`,
-      })
+        await db
+          .update(plateau)
+          .set({
+            surfaceRestanteM2: surfaceOrigine,
+            statut: 'disponible',
+          })
+          .where(eq(plateau.id, ligne.plateauId))
+
+        await db.insert(mouvementStock).values({
+          articleId: ligne.articleId,
+          plateauId: ligne.plateauId,
+          ligneVenteId: ligne.id,
+          utilisateurId: session.id,
+          type: 'annulation',
+          quantite: surfaceOrigine,
+          stockApres: surfaceOrigine,
+          motif: `Annulation vente ${ligne.mode} (ligne ${ligne.id})`,
+        })
+      }
     }
   }
 
