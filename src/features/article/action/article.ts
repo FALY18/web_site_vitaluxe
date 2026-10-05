@@ -35,12 +35,30 @@ export async function createArticle(
   // Pour vitre/alu/accessoire : on passe '' → le trigger génère le code
   const codeInsert = type === 'service' ? codeManuel : ''
 
-  // Vérification des doublons : même désignation + même type
-  const existing = await getArticleByDesignation(designation, type)
+  // Extraction des attributs spécifiques selon le type (pour la vérif de doublons)
+  const epaisseurMm = type === 'vitre' ? ((formData.get('epaisseurMm') as string)?.trim()) : undefined
+  const emplacement = type === 'alu' ? ((formData.get('emplacement') as string)?.trim() || null) : undefined
+
+  // Vérification des doublons (type-aware)
+  // - vitre : désignation + épaisseur
+  // - alu/accessoire : désignation + couleur
+  // - service : désignation + type (code déjà unique en DB)
+  const existing = await getArticleByDesignation(designation, type, {
+    epaisseurMm,
+    couleur,
+  })
   if (existing) {
-    return {
-      error: `Un article "${designation}" de type "${type}" existe déjà (code: ${existing.code}).`,
+    // Construction d'un message d'erreur contextuel
+    if (type === 'vitre') {
+      return { error: `Une vitre "${designation}" d'épaisseur ${epaisseurMm}mm existe déjà (code: ${existing.code}).` }
     }
+    if (type === 'alu') {
+      return { error: `Un profil aluminium "${designation}" de couleur ${couleur || 'non définie'} existe déjà (code: ${existing.code}).` }
+    }
+    if (type === 'accessoire') {
+      return { error: `Un accessoire "${designation}" de couleur ${couleur || 'non définie'} existe déjà (code: ${existing.code}).` }
+    }
+    return { error: `Un article "${designation}" de type "${type}" existe déjà (code: ${existing.code}).` }
   }
 
   try {
@@ -58,7 +76,6 @@ export async function createArticle(
       .returning({ id: article.id })
 
     if (type === 'vitre') {
-      const epaisseurMm = formData.get('epaisseurMm') as string
       const prixPlateauEntier = formData.get('prixPlateauEntier') as string
       const prixPlateauGros = (formData.get('prixPlateauGros') as string) || null
       if (!epaisseurMm || !prixPlateauEntier) return { error: 'Détails vitre requis.' }
@@ -73,7 +90,6 @@ export async function createArticle(
     if (type === 'alu') {
       const prixPack = formData.get('prixPack') as string
       const nombreParPack = Number(formData.get('nombreParPack'))
-      const emplacement = (formData.get('emplacement') as string)?.trim() || null
       if (!prixPack || !nombreParPack) return { error: 'Détails aluminium requis.' }
       await db.insert(articleAluDetail).values({
         articleId: created.id,

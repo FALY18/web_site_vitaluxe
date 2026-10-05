@@ -1,7 +1,19 @@
 import { db } from '@/db'
 import { article, articleVitreDetail, articleAluDetail, categorie } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 import type { ArticleWithDetail, TypeArticle } from '../types'
+
+/**
+ * Options de vérification de doublons selon le type d'article.
+ * Chaque type a son propre critère de distinction :
+ * - vitre : épaisseur (epaisseurMm)
+ * - alu / accessoire : couleur (couleur)
+ * - service : pas de critère supplémentaire (code déjà unique via la DB)
+ */
+interface DuplicateCheckOptions {
+  epaisseurMm?: string
+  couleur?: string | null
+}
 
 export async function getArticles(): Promise<ArticleWithDetail[]> {
   const rows = await db
@@ -48,13 +60,77 @@ export async function getCategories() {
 }
 
 /**
- * Vérifie si un article avec la même désignation et le même type existe déjà.
- * Utilisé avant la création pour éviter les doublons.
+ * Vérifie si un article identique existe déjà avant la création.
+ * La vérification tient compte des caractéristiques spécifiques à chaque type :
+ * - vitre : même désignation + même épaisseur (epaisseurMm)
+ * - alu / accessoire : même désignation + même couleur (couleur)
+ * - service : même désignation + même type (le code est déjà unique via la DB)
  */
 export async function getArticleByDesignation(
   designation: string,
   type: TypeArticle,
+  options?: DuplicateCheckOptions,
 ): Promise<{ id: number; code: string } | null> {
+  // --- vitre : join avec articleVitreDetail et filtre par epaisseurMm ---
+  if (type === 'vitre' && options?.epaisseurMm) {
+    const [row] = await db
+      .select({ id: article.id, code: article.code })
+      .from(article)
+      .leftJoin(
+        articleVitreDetail,
+        eq(articleVitreDetail.articleId, article.id),
+      )
+      .where(
+        and(
+          eq(article.designation, designation),
+          eq(article.type, type),
+          eq(articleVitreDetail.epaisseurMm, options.epaisseurMm),
+        )
+      )
+      .limit(1)
+    return row ?? null
+  }
+
+  // --- alu : filter par couleur (colonne sur article) ---
+  // Les profils alu peuvent avoir la même désignation mais des couleurs différentes
+  // (ex: "Antelio Bleu" vs "Antelio Marron") → pas un doublon
+  // L'emplacement est juste un métadonnée d'entreposage, pas un critère de distinction
+  if (type === 'alu') {
+    const [row] = await db
+      .select({ id: article.id, code: article.code })
+      .from(article)
+      .where(
+        and(
+          eq(article.designation, designation),
+          eq(article.type, type),
+          options?.couleur
+            ? eq(article.couleur, options.couleur)
+            : isNull(article.couleur),
+        )
+      )
+      .limit(1)
+    return row ?? null
+  }
+
+  // --- accessoire : filter par couleur (colonne sur article) ---
+  if (type === 'accessoire') {
+    const [row] = await db
+      .select({ id: article.id, code: article.code })
+      .from(article)
+      .where(
+        and(
+          eq(article.designation, designation),
+          eq(article.type, type),
+          options?.couleur
+            ? eq(article.couleur, options.couleur)
+            : isNull(article.couleur),
+        )
+      )
+      .limit(1)
+    return row ?? null
+  }
+
+  // --- service : désignation + type seulement (code déjà unique en DB) ---
   const [row] = await db
     .select({ id: article.id, code: article.code })
     .from(article)
@@ -62,7 +138,7 @@ export async function getArticleByDesignation(
       and(
         eq(article.designation, designation),
         eq(article.type, type),
-      ),
+      )
     )
     .limit(1)
 
