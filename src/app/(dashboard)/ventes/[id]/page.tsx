@@ -1,7 +1,10 @@
 import { getSession } from '@/features/auth/session'
 import { getVenteById, getPlateauxDisponibles } from '@/features/sell/queries/vente'
 import { getArticles } from '@/features/article/queries/article'
+import { getProformaInvoiceData, getFactureByVenteId } from '@/features/invoice/queries/invoice'
+import { createProformaInvoice } from '@/features/invoice/action/invoice'
 import { VenteDetailView } from '@/features/sell/components/vente-detail'
+import { ProformaInvoice } from '@/features/invoice/components/proforma-invoice'
 import { LigneForm } from '@/features/sell/components/ligne-form'
 import { PageHeader } from '@/features/dashboard/components/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,10 +18,12 @@ export default async function VenteDetailPage({ params }: { params: Promise<{ id
   if (!session) redirect('/login')
 
   const { id } = await params
-  const [venteData, articles, plateaux] = await Promise.all([
+  const [venteData, articles, plateaux, invoiceData, factureData] = await Promise.all([
     getVenteById(Number(id)),
     getArticles(),
     getPlateauxDisponibles(),
+    getProformaInvoiceData(Number(id)),
+    getFactureByVenteId(Number(id)),
   ])
 
   if (!venteData) notFound()
@@ -38,6 +43,25 @@ export default async function VenteDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <VenteDetailView vente={venteData} />
+
+      {invoiceData && (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold">Facture pro forma</h2>
+            <form action={createProformaInvoice.bind(null, venteData.id)}>
+              <Button type="submit" size="sm" variant={factureData ? 'secondary' : 'default'}>
+                {factureData ? 'Rafraîchir la facture' : 'Générer la facture'}
+              </Button>
+            </form>
+          </div>
+          {factureData && (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
+              Facture enregistrée : <span className="font-semibold">{factureData.numero || 'N° en cours'}</span>
+            </div>
+          )}
+          <ProformaInvoice invoice={invoiceData} />
+        </div>
+      )}
 
       {isBrouillon && (
         <Card>
