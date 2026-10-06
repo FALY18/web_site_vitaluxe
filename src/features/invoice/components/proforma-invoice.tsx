@@ -48,19 +48,19 @@ function InvoicePaper({
         </div>
       </header>
 
-      <section className="mb-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-lg bg-slate-50 p-3">
+      <section className="mb-3 grid grid-cols-2 gap-2">
+        <div className="min-w-0 rounded-lg bg-slate-50 p-2">
           <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Client</p>
-          <p className="mt-1 text-sm font-semibold">{vente.clientNom}</p>
-          <p className="text-[11px] text-slate-600">
+          <p className="mt-1 truncate text-sm font-semibold">{vente.clientNom}</p>
+          <p className="truncate text-[11px] text-slate-600">
             {vente.clientTelephone || 'Téléphone non renseigné'}
           </p>
         </div>
 
-        <div className="rounded-lg bg-slate-50 p-3">
+        <div className="min-w-0 rounded-lg bg-slate-50 p-2">
           <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500">Commercial</p>
-          <p className="mt-1 text-sm font-semibold">{vente.commercialNom}</p>
-          <p className="text-[11px] text-slate-600">Bon N° {vente.numero}</p>
+          <p className="mt-1 truncate text-sm font-semibold">{vente.commercialNom}</p>
+          <p className="truncate text-[11px] text-slate-600">Bon N° {vente.numero}</p>
         </div>
       </section>
 
@@ -129,32 +129,20 @@ function InvoicePaper({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-200 pt-3 text-[10px] text-slate-500">
-        <div className="rounded-md border border-dashed border-slate-300 p-2">
-          <span className="block font-medium uppercase tracking-[0.12em] text-slate-600">
-            Cachet
+      <div className="mt-3 grid grid-cols-2 gap-4 border-t border-slate-200 pt-3 text-[9px] text-slate-600">
+        <div className="px-1">
+          <span className="block text-center font-medium uppercase tracking-[0.12em]">
+            Cachet de l'entreprise
           </span>
-          <span className="mt-3 block h-12 rounded-sm border border-slate-200 bg-slate-50" />
+          <span className="mt-2 block h-10 border-b border-slate-300" />
         </div>
-        <div className="rounded-md border border-dashed border-slate-300 p-2 text-right">
-          <span className="block font-medium uppercase tracking-[0.12em] text-slate-600">
-            Signature
+        <div className="px-1">
+          <span className="block text-center font-medium uppercase tracking-[0.12em]">
+            Signature du client
           </span>
-          <span className="mt-3 inline-block h-12 w-24 rounded-sm border border-slate-200 bg-slate-50" />
+          <span className="mt-2 block h-10 border-b border-slate-300" />
         </div>
       </div>
-
-      <footer className="mt-3 border-t border-slate-200 pt-2 text-[10px] text-slate-500">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span>STAT : {company.stat || '—'}</span>
-          <span>Tol. : {company.toleranceMesureM || '0.005'} m</span>
-          <span>
-            {version === 'client'
-              ? 'Document de prévisionnel'
-              : 'Document interne / société'}
-          </span>
-        </div>
-      </footer>
     </div>
   )
 }
