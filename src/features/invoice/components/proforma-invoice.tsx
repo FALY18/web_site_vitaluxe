@@ -161,7 +161,7 @@ function InvoicePaper({
 
 export function ProformaInvoice({ invoice }: { invoice: ProformaInvoiceData }) {
   return (
-    <div className="invoice-template grid gap-5 xl:grid-cols-2 print:gap-3">
+    <div className="invoice-template invoice-premium grid gap-5 xl:grid-cols-2 print:gap-3">
       <div className="invoice-paper">
         <InvoicePaper invoice={invoice} version="client" />
       </div>
