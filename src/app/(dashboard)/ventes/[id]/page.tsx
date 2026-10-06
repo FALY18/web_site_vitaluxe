@@ -5,6 +5,8 @@ import { getProformaInvoiceData, getFactureByVenteId } from '@/features/invoice/
 import { createProformaInvoice } from '@/features/invoice/action/invoice'
 import { VenteDetailView } from '@/features/sell/components/vente-detail'
 import { ProformaInvoice } from '@/features/invoice/components/proforma-invoice'
+import { InvoicePrintButton } from '@/features/invoice/components/invoice-print-button'
+import { createFinalInvoice } from '@/features/invoice/action/invoice'
 import { LigneForm } from '@/features/sell/components/ligne-form'
 import { PageHeader } from '@/features/dashboard/components/page-header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,19 +46,29 @@ export default async function VenteDetailPage({ params }: { params: Promise<{ id
 
       <VenteDetailView vente={venteData} />
 
-      {invoiceData && (
+      {invoiceData && ['confirmee', 'livree'].includes(venteData.statut) && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Facture pro forma</h2>
-            <form action={createProformaInvoice.bind(null, venteData.id)}>
-              <Button type="submit" size="sm" variant={factureData ? 'secondary' : 'default'}>
-                {factureData ? 'Rafraîchir la facture' : 'Générer la facture'}
-              </Button>
-            </form>
+            <h2 className="text-lg font-semibold">Aperçu facture pro forma</h2>
+            <div className="flex items-center gap-2">
+              <form action={createProformaInvoice.bind(null, venteData.id)}>
+                <Button type="submit" size="sm" variant={factureData ? 'secondary' : 'default'}>
+                  {factureData ? 'Rafraîchir' : 'Générer'}
+                </Button>
+              </form>
+              <form action={createFinalInvoice.bind(null, venteData.id)}>
+                <Button type="submit" size="sm" variant={factureData?.statut === 'emise' ? 'secondary' : 'outline'}>
+                  {factureData?.statut === 'emise' ? 'Facture finale' : 'Créer facture finale'}
+                </Button>
+              </form>
+              <InvoicePrintButton />
+            </div>
           </div>
           {factureData && (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
-              Facture enregistrée : <span className="font-semibold">{factureData.numero || 'N° en cours'}</span>
+              {factureData.statut === 'emise'
+                ? <>Facture finale enregistrée : <span className="font-semibold">{factureData.numero || 'N° en cours'}</span></>
+                : <>Facture enregistrée : <span className="font-semibold">{factureData.numero || 'N° en cours'}</span></>}
             </div>
           )}
           <ProformaInvoice invoice={invoiceData} />

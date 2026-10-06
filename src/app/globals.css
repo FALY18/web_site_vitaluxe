@@ -60,6 +60,66 @@
   em { font-style: italic; color: var(--gold); }
 }
 
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .invoice-premium,
+  .invoice-premium * {
+    visibility: visible;
+  }
+
+  .invoice-premium {
+    position: static !important;
+    display: grid !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0.75rem !important;
+    background: linear-gradient(180deg, #ffffff 0%, #faf7f1 100%);
+    color: #111827;
+  }
+
+  .invoice-paper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  .invoice-paper > div {
+    box-shadow: none !important;
+    border-color: #d1d5db !important;
+    border-radius: 0 !important;
+    padding: 0.75rem !important;
+    background: #fff !important;
+  }
+
+  .invoice-premium .rounded-2xl,
+  .invoice-premium .rounded-xl,
+  .invoice-premium .rounded-lg {
+    border-radius: 0 !important;
+  }
+
+  .print\:hidden,
+  form,
+  button,
+  [role="button"],
+  .non-print {
+    display: none !important;
+  }
+}
+
 /* ── Keyframes ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(32px); }
