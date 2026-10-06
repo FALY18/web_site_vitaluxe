@@ -63,7 +63,7 @@
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 0;
   }
 
   body {
@@ -96,8 +96,9 @@
     align-items: start !important;
     width: 100% !important;
     max-width: 100% !important;
+    box-sizing: border-box !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 8mm !important;
     gap: 4mm !important;
     background: linear-gradient(180deg, #ffffff 0%, #faf7f1 100%);
     color: #111827;
