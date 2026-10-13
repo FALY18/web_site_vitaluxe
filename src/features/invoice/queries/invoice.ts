@@ -1,8 +1,8 @@
 import { db } from '@/db'
-import { facture, parametreSociete } from '@/db/schema'
+import { facture, parametreSociete, utilisateur } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { getVenteById } from '@/features/sell/queries/vente'
-import { buildCompanyProfile, buildProformaNumber } from '../models/invoice'
+import { buildCompanyProfile, buildProformaNumber, calculateInvoiceTotals } from '../models/invoice'
 import type { ProformaInvoiceData } from '../types'
 
 export async function getFactureByVenteId(venteId: number) {
@@ -15,8 +15,15 @@ export async function getFactureByVenteId(venteId: number) {
       montantTva: facture.montantTva,
       totalTtc: facture.totalTtc,
       statut: facture.statut,
+      sousTotalHt: facture.sousTotalHt,
+      modeRemise: facture.modeRemise,
+      valeurRemise: facture.valeurRemise,
+      montantRemise: facture.montantRemise,
+      fraisLivraison: facture.fraisLivraison,
+      caissierNom: utilisateur.nom,
     })
     .from(facture)
+    .leftJoin(utilisateur, eq(facture.caissierId, utilisateur.id))
     .where(eq(facture.venteId, venteId))
     .limit(1)
 
@@ -34,6 +41,29 @@ export async function getProformaInvoiceData(
     return null
   }
 
+  const sourceTotals = factureData ?? {
+    sousTotalHt: vente.total,
+    modeRemise: vente.modeRemise,
+    valeurRemise: vente.valeurRemise,
+    fraisLivraison: vente.fraisLivraison,
+    caissierNom: vente.commercialNom,
+  }
+  const { caissierNom, ...invoiceInputs } = sourceTotals
+  const totals = {
+    ...calculateInvoiceTotals(
+      invoiceInputs.sousTotalHt,
+      invoiceInputs.modeRemise,
+      invoiceInputs.valeurRemise,
+      invoiceInputs.fraisLivraison,
+    ),
+    ...(factureData ? {
+      totalHt: Number(factureData.totalHt),
+      montantTva: Number(factureData.montantTva),
+      totalTtc: Number(factureData.totalTtc),
+      montantRemise: Number(factureData.montantRemise),
+    } : {}),
+  }
+
   return {
     numero: buildProformaNumber(
       vente.numero,
@@ -41,5 +71,7 @@ export async function getProformaInvoiceData(
     ),
     vente,
     company: buildCompanyProfile(company),
+    totals,
+    caissierNom: caissierNom ?? vente.commercialNom,
   }
 }

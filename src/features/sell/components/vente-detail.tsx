@@ -1,9 +1,11 @@
 import { deleteLigne, updateStatutVente } from '../action/vente'
+import { VenteOptionsForm } from './vente-options-form'
 import { StatutBadge } from './vente-statut-badge'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 import { MODE_LABELS } from '../types'
 import type { VenteDetail } from '../types'
+import { calculateInvoiceTotals } from '@/features/invoice/models/invoice'
 
 function formatAr(val: string) {
   return Number(val).toLocaleString('fr-MG') + ' Ar'
@@ -11,6 +13,12 @@ function formatAr(val: string) {
 
 export function VenteDetailView({ vente }: { vente: VenteDetail }) {
   const isBrouillon = vente.statut === 'brouillon'
+  const totals = calculateInvoiceTotals(
+    vente.total,
+    vente.modeRemise,
+    vente.valeurRemise,
+    vente.fraisLivraison,
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,12 +43,19 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total</p>
-          <p className="text-xl font-heading font-bold">{formatAr(vente.total)}</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Net à payer</p>
+          <p className="text-xl font-heading font-bold">{formatAr(totals.totalTtc.toFixed(2))}</p>
+          {(Number(vente.valeurRemise) > 0 || Number(vente.fraisLivraison) > 0) && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Articles {formatAr(vente.total)} · remise −{formatAr(totals.montantRemise.toFixed(2))} · livraison {formatAr(totals.fraisLivraison.toFixed(2))}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Actions statut */}
+      {isBrouillon && <VenteOptionsForm vente={vente} />}
+
       {isBrouillon && (
         <div className="flex gap-2">
           <form action={updateStatutVente.bind(null, vente.id, 'confirmee')}>

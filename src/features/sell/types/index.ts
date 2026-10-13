@@ -7,6 +7,9 @@ export type VenteRow = {
   date: string
   statut: StatutVente
   total: string
+  modeRemise: 'pourcentage' | 'montant'
+  valeurRemise: string
+  fraisLivraison: string
   clientNom: string
   commercialNom: string
 }
@@ -51,6 +54,7 @@ export type PlateauDisponible = {
 
 export type VenteFormState = { error?: string; success?: boolean; venteId?: number }
 export type LigneFormState = { error?: string; success?: boolean }
+export type VenteOptionsFormState = { error?: string; success?: boolean }
 
 export const STATUT_LABELS: Record<StatutVente, string> = {
   brouillon:  'Brouillon',

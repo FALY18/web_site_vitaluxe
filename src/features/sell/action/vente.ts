@@ -6,7 +6,7 @@ import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/features/auth/session'
 import { getArticleForSale, getPlateauById } from '../queries/vente'
-import type { VenteFormState, LigneFormState, ModeLigne } from '../types'
+import type { VenteFormState, LigneFormState, ModeLigne, VenteOptionsFormState } from '../types'
 
 // ── Créer ou trouver un client à la volée ──────────────────────────────
 async function upsertClient(nom: string, telephone: string | null): Promise<number> {
@@ -45,6 +45,55 @@ export async function createVente(
 
   revalidatePath('/dashboard/ventes')
   return { success: true, venteId: v.id }
+}
+
+export async function updateVenteOptions(
+  venteId: number,
+  _prev: VenteOptionsFormState,
+  formData: FormData,
+): Promise<VenteOptionsFormState> {
+  const session = await getSession()
+  if (!session) return { error: 'Non authentifié.' }
+
+  const modeRemise = formData.get('modeRemise')
+  const valeurRemise = Number(formData.get('valeurRemise'))
+  const fraisLivraison = Number(formData.get('fraisLivraison'))
+
+  if (modeRemise !== 'pourcentage' && modeRemise !== 'montant') {
+    return { error: 'Choisissez un mode de remise valide.' }
+  }
+  if (!Number.isFinite(valeurRemise) || valeurRemise < 0 || !Number.isFinite(fraisLivraison) || fraisLivraison < 0) {
+    return { error: 'Les montants doivent être des nombres positifs.' }
+  }
+  if (modeRemise === 'pourcentage' && valeurRemise > 100) {
+    return { error: 'La remise en pourcentage ne peut pas dépasser 100 %.' }
+  }
+
+  const [venteData] = await db
+    .select({ statut: vente.statut, total: vente.total })
+    .from(vente)
+    .where(eq(vente.id, venteId))
+    .limit(1)
+
+  if (!venteData || venteData.statut !== 'brouillon') {
+    return { error: 'Cette vente n’est plus modifiable.' }
+  }
+  if (modeRemise === 'montant' && valeurRemise > Number(venteData.total)) {
+    return { error: 'La remise ne peut pas dépasser le montant des articles.' }
+  }
+
+  await db
+    .update(vente)
+    .set({
+      modeRemise,
+      valeurRemise: valeurRemise.toFixed(2),
+      fraisLivraison: fraisLivraison.toFixed(2),
+    })
+    .where(eq(vente.id, venteId))
+
+  revalidatePath(`/dashboard/ventes/${venteId}`)
+  revalidatePath('/dashboard/ventes')
+  return { success: true }
 }
 
 // ── Ajouter une ligne ──────────────────────────────────────────────────

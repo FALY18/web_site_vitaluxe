@@ -13,4 +13,15 @@ export type ProformaInvoiceData = {
   numero: string
   vente: VenteDetail
   company: CompanyProfile
+  totals: {
+    sousTotalHt: number
+    modeRemise: 'pourcentage' | 'montant'
+    valeurRemise: number
+    montantRemise: number
+    fraisLivraison: number
+    totalHt: number
+    montantTva: number
+    totalTtc: number
+  }
+  caissierNom: string
 }

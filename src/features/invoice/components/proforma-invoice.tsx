@@ -1,5 +1,4 @@
 import type { ProformaInvoiceData } from '../types'
-import { calculateInvoiceTotals } from '../models/invoice'
 import { formatDate, formatMoney, getModeLabel } from '../lib/format'
 
 function InvoicePaper({
@@ -10,7 +9,7 @@ function InvoicePaper({
   version: 'client' | 'societe'
 }) {
   const { company, vente } = invoice
-  const totals = calculateInvoiceTotals(vente.total ?? 0)
+  const { totals } = invoice
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm sm:p-5">
@@ -115,15 +114,23 @@ function InvoicePaper({
       <div className="mt-4 flex justify-end">
         <div className="w-full max-w-xs space-y-1 rounded-lg bg-slate-50 p-3">
           <div className="flex items-center justify-between text-[11px] text-slate-600">
+            <span>Sous-total</span>
+            <span>{formatMoney(totals.sousTotalHt)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-600">
+            <span>Remise {totals.modeRemise === 'pourcentage' ? `(${totals.valeurRemise} %)` : ''}</span>
+            <span>− {formatMoney(totals.montantRemise)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-600">
+            <span>Frais de livraison</span>
+            <span>{formatMoney(totals.fraisLivraison)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-600">
             <span>Total HT</span>
             <span>{formatMoney(totals.totalHt)}</span>
           </div>
-          <div className="flex items-center justify-between text-[11px] text-slate-600">
-            <span>TVA (20%)</span>
-            <span>{formatMoney(totals.montantTva)}</span>
-          </div>
           <div className="flex items-center justify-between border-t border-slate-200 pt-2 text-sm font-bold text-slate-900">
-            <span>Total TTC</span>
+            <span>Net à payer</span>
             <span>{formatMoney(totals.totalTtc)}</span>
           </div>
         </div>
@@ -132,15 +139,19 @@ function InvoicePaper({
       <div className="mt-3 grid grid-cols-2 gap-4 border-t border-slate-200 pt-3 text-[9px] text-slate-600">
         <div className="px-1">
           <span className="block text-center font-medium uppercase tracking-[0.12em]">
-            Cachet de l'entreprise
+            Caissier
           </span>
-          <span className="mt-2 block h-10 border-b border-slate-300" />
+          <span className="mt-2 block h-10 border-b border-slate-300 text-center text-[11px] font-semibold normal-case tracking-normal">
+            {invoice.caissierNom}
+          </span>
         </div>
         <div className="px-1">
           <span className="block text-center font-medium uppercase tracking-[0.12em]">
-            Signature du client
+            Client
           </span>
-          <span className="mt-2 block h-10 border-b border-slate-300" />
+          <span className="mt-2 block h-10 border-b border-slate-300 text-center text-[11px] font-semibold normal-case tracking-normal">
+            {vente.clientNom}
+          </span>
         </div>
       </div>
     </div>

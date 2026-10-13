@@ -92,6 +92,8 @@ export const modePaiementEnum = pgEnum("mode_paiement", [
   "cheque",
 ]);
 
+export const modeRemiseEnum = pgEnum("mode_remise", ["pourcentage", "montant"]);
+
 // ---------------------------------------------------------------------
 // 1. Utilisateur
 // ---------------------------------------------------------------------
@@ -248,12 +250,20 @@ export const vente = pgTable("vente", {
   date: date("date").notNull().defaultNow(),
   statut: statutVenteEnum("statut").notNull().default("brouillon"),
   total: numeric("total", { precision: 14, scale: 2 }).notNull().default("0"),
+  modeRemise: modeRemiseEnum("mode_remise").notNull().default("pourcentage"),
+  valeurRemise: numeric("valeur_remise", { precision: 14, scale: 2 }).notNull().default("0"),
+  fraisLivraison: numeric("frais_livraison", { precision: 14, scale: 2 }).notNull().default("0"),
 }, (t) => ({
   numeroUnique: uniqueIndex("vente_numero_key").on(t.numero),
   clientIdx: index("idx_vente_client").on(t.clientId),
   commercialIdx: index("idx_vente_commercial").on(t.commercialId),
   statutIdx: index("idx_vente_statut").on(t.statut),
   totalPositif: check("ck_vente_total", sql`${t.total} >= 0`),
+  remiseValide: check(
+    "ck_vente_remise_valeur",
+    sql`${t.valeurRemise} >= 0 AND (${t.modeRemise} <> 'pourcentage' OR ${t.valeurRemise} <= 100)`
+  ),
+  livraisonPositive: check("ck_vente_frais_livraison", sql`${t.fraisLivraison} >= 0`),
 }));
 
 // ---------------------------------------------------------------------
@@ -383,6 +393,12 @@ export const facture = pgTable("facture", {
     .default("0"),
   totalTtc: numeric("total_ttc", { precision: 14, scale: 2 }).notNull(),
   statut: statutFactureEnum("statut").notNull().default("brouillon"),
+  caissierId: integer("caissier_id").references(() => utilisateur.id),
+  sousTotalHt: numeric("sous_total_ht", { precision: 14, scale: 2 }).notNull().default("0"),
+  modeRemise: modeRemiseEnum("mode_remise").notNull().default("pourcentage"),
+  valeurRemise: numeric("valeur_remise", { precision: 14, scale: 2 }).notNull().default("0"),
+  montantRemise: numeric("montant_remise", { precision: 14, scale: 2 }).notNull().default("0"),
+  fraisLivraison: numeric("frais_livraison", { precision: 14, scale: 2 }).notNull().default("0"),
 }, (t) => ({
   numeroUnique: uniqueIndex("facture_numero_key").on(t.numero),
   venteIdx: index("idx_facture_vente").on(t.venteId),
@@ -390,6 +406,10 @@ export const facture = pgTable("facture", {
   montantsPositifs: check(
     "ck_facture_montants",
     sql`${t.totalHt} >= 0 AND ${t.montantTva} >= 0 AND ${t.totalTtc} >= 0`
+  ),
+  remisesLivraisonValides: check(
+    "ck_facture_montants_commerciaux",
+    sql`${t.sousTotalHt} >= 0 AND ${t.valeurRemise} >= 0 AND ${t.montantRemise} >= 0 AND ${t.fraisLivraison} >= 0 AND (${t.modeRemise} <> 'pourcentage' OR ${t.valeurRemise} <= 100)`
   ),
 }));
 
@@ -547,6 +567,7 @@ export const mouvementStockRelations = relations(
 
 export const factureRelations = relations(facture, ({ one, many }) => ({
   vente: one(vente, { fields: [facture.venteId], references: [vente.id] }),
+  caissier: one(utilisateur, { fields: [facture.caissierId], references: [utilisateur.id] }),
   paiements: many(paiement),
 }));
 
