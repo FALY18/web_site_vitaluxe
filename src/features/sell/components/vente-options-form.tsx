@@ -12,7 +12,7 @@ function formatAr(value: number) {
   return `${value.toLocaleString('fr-MG', { maximumFractionDigits: 2 })} Ar`
 }
 
-export function VenteOptionsForm({ vente }: { vente: VenteDetail }) {
+export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail; locked?: boolean }) {
   const [mode, setMode] = useState<'pourcentage' | 'montant'>(vente.modeRemise)
   const [valeur, setValeur] = useState(vente.valeurRemise)
   const [livraison, setLivraison] = useState(vente.fraisLivraison)
@@ -38,8 +38,8 @@ export function VenteOptionsForm({ vente }: { vente: VenteDetail }) {
   return (
     <form action={action} className="rounded-xl bg-card ring-1 ring-foreground/10 p-4 sm:p-5 flex flex-col gap-4">
       <div>
-        <h3 className="text-sm font-semibold">Remise et livraison</h3>
-        <p className="mt-1 text-xs text-muted-foreground">La remise est déduite du montant des articles. Aucune TVA n’est calculée.</p>
+        <h3 className="text-sm font-semibold">Étape 1 · Conditions de facturation</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Le caissier renseigne ici la remise et la livraison avant de générer la facture. La remise est déduite des articles. Aucune TVA n’est calculée.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -49,6 +49,7 @@ export function VenteOptionsForm({ vente }: { vente: VenteDetail }) {
             id={`discount-mode-${vente.id}`}
             name="modeRemise"
             value={mode}
+            disabled={locked}
             onChange={(event) => setMode(event.target.value as typeof mode)}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
@@ -68,6 +69,7 @@ export function VenteOptionsForm({ vente }: { vente: VenteDetail }) {
             max={mode === 'pourcentage' ? '100' : undefined}
             step="0.01"
             value={valeur}
+            disabled={locked}
             onChange={(event) => setValeur(event.target.value)}
             required
           />
@@ -81,6 +83,7 @@ export function VenteOptionsForm({ vente }: { vente: VenteDetail }) {
             min="0"
             step="0.01"
             value={livraison}
+            disabled={locked}
             onChange={(event) => setLivraison(event.target.value)}
             required
           />
@@ -92,11 +95,12 @@ export function VenteOptionsForm({ vente }: { vente: VenteDetail }) {
         <span className="text-muted-foreground">Net à payer : <strong className="text-base text-[#c8a96e]">{formatAr(preview.net)}</strong></span>
       </div>
 
+      {locked && <p className="text-xs text-amber-500">Facture émise : les montants sont verrouillés.</p>}
       {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
       {state.success && <p role="status" className="text-sm text-emerald-400">Options enregistrées.</p>}
-      <Button type="submit" size="sm" disabled={pending} className="self-end">
-        {pending ? 'Enregistrement…' : 'Enregistrer les montants'}
-      </Button>
+      {!locked && <Button type="submit" size="sm" disabled={pending} className="self-end">
+        {pending ? 'Enregistrement…' : 'Enregistrer remise et livraison'}
+      </Button>}
     </form>
   )
 }

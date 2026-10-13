@@ -1,5 +1,4 @@
 import { deleteLigne, updateStatutVente } from '../action/vente'
-import { VenteOptionsForm } from './vente-options-form'
 import { StatutBadge } from './vente-statut-badge'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
@@ -54,8 +53,6 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
       </div>
 
       {/* Actions statut */}
-      {isBrouillon && <VenteOptionsForm vente={vente} />}
-
       {isBrouillon && (
         <div className="flex gap-2">
           <form action={updateStatutVente.bind(null, vente.id, 'confirmee')}>

@@ -4,6 +4,7 @@ import { getArticles } from '@/features/article/queries/article'
 import { getProformaInvoiceData, getFactureByVenteId } from '@/features/invoice/queries/invoice'
 import { createProformaInvoice } from '@/features/invoice/action/invoice'
 import { VenteDetailView } from '@/features/sell/components/vente-detail'
+import { VenteOptionsForm } from '@/features/sell/components/vente-options-form'
 import { ProformaInvoice } from '@/features/invoice/components/proforma-invoice'
 import { InvoicePrintButton } from '@/features/invoice/components/invoice-print-button'
 import { createFinalInvoice } from '@/features/invoice/action/invoice'
@@ -48,6 +49,10 @@ export default async function VenteDetailPage({ params }: { params: Promise<{ id
 
       {invoiceData && ['confirmee', 'livree'].includes(venteData.statut) && (
         <div className="flex flex-col gap-4">
+          <VenteOptionsForm
+            vente={venteData}
+            locked={Boolean(factureData && factureData.statut !== 'brouillon')}
+          />
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Aperçu facture pro forma</h2>
             <div className="flex items-center gap-2">

@@ -1,11 +1,12 @@
 'use server'
 
 import { db } from '@/db'
-import { vente, ligneVente, client, mouvementStock, plateau } from '@/db/schema'
+import { vente, facture, ligneVente, client, mouvementStock, plateau } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/features/auth/session'
 import { getArticleForSale, getPlateauById } from '../queries/vente'
+import { calculateInvoiceTotals } from '@/features/invoice/models/invoice'
 import type { VenteFormState, LigneFormState, ModeLigne, VenteOptionsFormState } from '../types'
 
 // ── Créer ou trouver un client à la volée ──────────────────────────────
@@ -75,8 +76,17 @@ export async function updateVenteOptions(
     .where(eq(vente.id, venteId))
     .limit(1)
 
-  if (!venteData || venteData.statut !== 'brouillon') {
-    return { error: 'Cette vente n’est plus modifiable.' }
+  if (!venteData || !['confirmee', 'livree'].includes(venteData.statut)) {
+    return { error: 'La remise et la livraison se règlent depuis une vente confirmée.' }
+  }
+
+  const [existingInvoice] = await db
+    .select({ id: facture.id, statut: facture.statut })
+    .from(facture)
+    .where(eq(facture.venteId, venteId))
+    .limit(1)
+  if (existingInvoice && existingInvoice.statut !== 'brouillon') {
+    return { error: 'La facture est déjà émise et ne peut plus être modifiée.' }
   }
   if (modeRemise === 'montant' && valeurRemise > Number(venteData.total)) {
     return { error: 'La remise ne peut pas dépasser le montant des articles.' }
@@ -90,6 +100,21 @@ export async function updateVenteOptions(
       fraisLivraison: fraisLivraison.toFixed(2),
     })
     .where(eq(vente.id, venteId))
+
+  if (existingInvoice) {
+    const totals = calculateInvoiceTotals(venteData.total, modeRemise, valeurRemise, fraisLivraison)
+    await db.update(facture).set({
+      caissierId: session.id,
+      sousTotalHt: totals.sousTotalHt.toFixed(2),
+      modeRemise: totals.modeRemise,
+      valeurRemise: totals.valeurRemise.toFixed(2),
+      montantRemise: totals.montantRemise.toFixed(2),
+      fraisLivraison: totals.fraisLivraison.toFixed(2),
+      totalHt: totals.totalHt.toFixed(2),
+      montantTva: '0',
+      totalTtc: totals.totalTtc.toFixed(2),
+    }).where(eq(facture.id, existingInvoice.id))
+  }
 
   revalidatePath(`/dashboard/ventes/${venteId}`)
   revalidatePath('/dashboard/ventes')
