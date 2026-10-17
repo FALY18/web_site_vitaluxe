@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { MODE_LABELS } from '../types'
 import type { LigneFormState, ModeLigne, PlateauDisponible } from '../types'
 import type { ArticleWithDetail } from '@/features/article/types'
-import { cutQuantity, lineAmounts, modesForArticle } from '../lib/rules'
+import { cutQuantity, lineAmounts, modesForArticle, surfaceAfterSale } from '../lib/rules'
 
 type Props = { venteId: number; articles: ArticleWithDetail[]; plateaux: PlateauDisponible[] }
 
@@ -36,6 +36,12 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
     : Number(nombre)
   let preview: ReturnType<typeof lineAmounts> | null = null
   try { if (price) preview = lineAmounts(quantity, price) } catch { /* Incomplete input is not a billable line. */ }
+  let remainingPreview: string | null = null
+  let stockError: string | null = null
+  if (sheet && preview) {
+    try { remainingPreview = surfaceAfterSale(sheet.surfaceRestanteM2, whole ? Number(sheet.surfaceRestanteM2) : quantity) }
+    catch { stockError = 'La surface demandée dépasse le reste disponible du plateau.' }
+  }
   const selectedItems = articles.filter(a => String(a.id) === articleId || `${a.code} ${a.designation} ${a.couleur ?? ''}`.toLocaleLowerCase('fr').includes(search.toLocaleLowerCase('fr')))
   const [state, action, pending] = useActionState(async (prev: LigneFormState, data: FormData) => {
     const result = await addLigne(prev, data)
@@ -118,8 +124,10 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
           <strong className="text-primary">{preview ? `${Number(preview.montant).toLocaleString('fr-FR')} Ar` : '—'}</strong>
         </div>
         {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
-        {state.success && <p role="status" className="text-xs text-emerald-700">Ligne ajoutée au bon.</p>}
-        <Button type="submit" disabled={pending || !item || !preview || (needsPlateau && !sheet)} className="w-full">{pending ? 'Ajout…' : 'Ajouter au bon'}</Button>
+        {remainingPreview != null && <p aria-live="polite" className="rounded-lg bg-muted p-2 text-xs">Plateau #{sheet?.id} : {sheet?.surfaceRestanteM2} m² disponibles → <strong>{remainingPreview} m² après cette ligne</strong></p>}
+        {stockError && <p role="alert" className="text-xs text-destructive">{stockError}</p>}
+        {state.success && <p role="status" className="text-xs text-emerald-700">Ligne ajoutée au bon.{state.plateauId != null && <> Plateau #{state.plateauId} : reste enregistré {state.surfaceRestanteM2} m².</>}</p>}
+        <Button type="submit" disabled={pending || !item || !preview || Boolean(stockError) || (needsPlateau && !sheet)} className="w-full">{pending ? 'Ajout…' : 'Ajouter au bon'}</Button>
         <p className="text-[11px] text-muted-foreground">Le stock est déduit dès l’ajout au brouillon et restitué en cas d’annulation.</p>
       </div>
     </form>

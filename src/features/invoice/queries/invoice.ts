@@ -1,6 +1,7 @@
 import { db } from '@/db'
-import { facture, parametreSociete, utilisateur } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { facture, paiement, parametreSociete, utilisateur } from '@/db/schema'
+import { eq, asc } from 'drizzle-orm'
+import { paymentBalance } from '@/features/sell/lib/rules'
 import { getVenteById } from '@/features/sell/queries/vente'
 import { buildCompanyProfile, buildProformaNumber, calculateInvoiceTotals } from '../models/invoice'
 import type { ProformaInvoiceData } from '../types'
@@ -27,7 +28,11 @@ export async function getFactureByVenteId(venteId: number) {
     .where(eq(facture.venteId, venteId))
     .limit(1)
 
-  return row ?? null
+  if (!row) return null
+  const paiements = await db.select({ id: paiement.id, date: paiement.date, montant: paiement.montant, mode: paiement.mode })
+    .from(paiement).where(eq(paiement.factureId, row.id)).orderBy(asc(paiement.date), asc(paiement.id))
+  const paidCents = paiements.reduce((sum, receipt) => sum + Math.round(Number(receipt.montant) * 100), 0)
+  return { ...row, reglements: { paiements, ...paymentBalance(row.totalTtc, (paidCents / 100).toFixed(2)) } }
 }
 
 export async function getProformaInvoiceData(
@@ -69,7 +74,9 @@ export async function getProformaInvoiceData(
       vente.numero,
       factureData?.numero ?? null,
     ),
-    vente,
+    vente,    statut: factureData?.statut ?? 'brouillon',
+    reglements: factureData?.reglements ?? { paiements: [], montantPaye: 0, resteAPayer: totals.totalTtc },
+
     company: buildCompanyProfile(company),
     totals,
     caissierNom: caissierNom ?? vente.commercialNom,

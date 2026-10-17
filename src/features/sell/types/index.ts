@@ -1,5 +1,13 @@
 export type StatutVente = 'brouillon' | 'confirmee' | 'livree' | 'annulee'
 export type ModeLigne = 'decoupe' | 'plateau_entier' | 'plateau_gros' | 'barre' | 'pack' | 'standard'
+export type ModePaiement = 'especes' | 'mobile_money' | 'virement' | 'cheque'
+
+export const PAIEMENT_LABELS: Record<ModePaiement, string> = {
+  especes: 'Espèces',
+  mobile_money: 'Mobile money',
+  virement: 'Virement bancaire',
+  cheque: 'Chèque',
+}
 
 export type VenteRow = {
   id: number
@@ -29,6 +37,7 @@ export type LigneVenteRow = {
   prixApplique: string
   montant: string
   surfaceRestanteApres: string | null
+  surfaceRestanteActuelleM2: string | null
 }
 
 export type VenteDetail = VenteRow & {
@@ -53,7 +62,7 @@ export type PlateauDisponible = {
 }
 
 export type VenteFormState = { error?: string; success?: boolean; venteId?: number }
-export type LigneFormState = { error?: string; success?: boolean }
+export type LigneFormState = { error?: string; success?: boolean; plateauId?: number; surfaceRestanteM2?: string }
 export type VenteOptionsFormState = { error?: string; success?: boolean }
 
 export const STATUT_LABELS: Record<StatutVente, string> = {

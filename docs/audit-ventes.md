@@ -62,7 +62,37 @@ Thème clair par défaut pour le site et la gestion ; couleurs sémantiques des 
 
 - TypeScript : `tsc --noEmit`.
 - ESLint : zéro erreur ; avertissements préexistants sur les images et quelques imports inutilisés.
-- Tests : `node --test tests/sales-rules.test.mjs` ; huit tests de règles/calculs.
+- Tests : `node --test tests/sales-rules.test.mjs` ; dix-huit tests de règles/calculs, dont les règlements partiels/complets, dépassements de solde, dates et références signées.
 - Compilation de production Next.js : réussie après autorisation du téléchargement des polices Google.
-- Pas de scénario de vente réelle exécuté sur les données métier ; les transactions de stock et leur concurrence restent à tester sur une base de test.
+- Intégration : `node scripts/test-payment-flow.mjs` exécute la véritable action serveur sur trois tables PostgreSQL temporaires masquant `vente`, `facture` et `paiement`, avec des séquences temporaires propres. Paiement partiel, solde, doublon, trop-perçu, verrouillage et rollback sont vérifiés sans créer de données métier. La concurrence du stock reste à tester sur une base de test.
 - Rendu visuel et impression à contrôler en navigateur aux largeurs 360, 390, 768 et 1440 px après migration.
+
+## Réanalyse du reste des plateaux et du paiement
+
+L’inspection en lecture seule a été complétée par `scripts/audit-stock-payments.mjs`. Les cinq contrôles ciblés sont à zéro avant et après la migration 007 : reste actuel différent du dernier mouvement, surface supérieure à l’origine, plateau disponible sans surface, plateau vendu/épuisé avec une surface positive, instantané de ligne différent du mouvement de vente associé.
+
+Le calcul part exclusivement de la valeur actuelle de `plateau.surface_restante_m2`, lue sous verrou dans la transaction de vente :
+
+```text
+Découpe : nouveau reste = reste actuel - surface découpée arrondie à 0,01 m²
+Plateau entier/gros : nouveau reste = 0,00 m²
+Annulation : nouveau reste = reste actuel + débit net enregistré pour la ligne
+```
+
+Exemple testé : 6,50 m² − 1,92 m² = 4,58 m² ; une autre découpe de 0,96 m² laisse 3,62 m². Annuler la première découpe restitue 1,92 m² au stock actuel, soit 5,54 m². Le calcul ne repart pas des dimensions d’origine ou d’un ancien instantané.
+
+La confirmation et la livraison ne retirent pas à nouveau les surfaces déjà débitées au brouillon. Le formulaire affiche une projection avant/après, puis confirme le reste enregistré par le serveur. Le bon affiche un récapitulatif dépliable du stock actuel des plateaux concernés, avec un seul comptage par plateau ; les lignes conservent séparément leur instantané historique `surface_restante_apres`.
+
+## Règlements réels : table existante uniquement
+
+À la demande de l’utilisateur, la migration 008 a supprimé `vente.mode_paiement` et `facture.mode_paiement`. La migration 007 reste uniquement dans l’historique du dépôt ; elle n’est plus exécutée par le script de mise à niveau. La table `paiement` et son enum d’origine sont inchangés. L’audit confirme l’absence des deux colonnes et la préservation du schéma des règlements.
+
+La première étape regroupe la remise, les frais et l’enregistrement facultatif d’un règlement reçu : montant strictement positif, mode (espèces, mobile money, virement, chèque) et date de réception valide, sans date future. Sans règlement coché, seules les conditions sont enregistrées ; aucune ligne de paiement n’est créée.
+
+Avec un règlement reçu, la facture est créée/émise si nécessaire, puis le paiement est inséré dans `paiement` dans la même transaction. La facture devient `partielle` si un solde subsiste, `payee` si la somme des règlements atteint le total TTC. Un trop-perçu est refusé ; les conditions d’une facture émise restent verrouillées, mais les règlements complémentaires restent possibles. Une facture à total nul peut être émise comme payée sans créer de paiement fictif de zéro.
+
+Le solde est calculé à partir de `facture.total_ttc - SUM(paiement.montant)` et affiché avec l’historique des dates/modes/montants dans le formulaire et dans les deux exemplaires de facture. Les calculs utilisent des centimes entiers.
+
+L’enregistrement verrouille d’abord la vente, puis la facture. Une référence signée liée à la vente et à l’utilisateur réserve un identifiant dans la séquence existante de `paiement.id`. Une répétition identique cible la même clé primaire et retourne le succès sans nouvel encaissement ; une réutilisation avec d’autres données est refusée. Aucune colonne d’idempotence supplémentaire n’a été ajoutée. Les identifiants peuvent comporter des trous lorsqu’un formulaire est consulté sans enregistrement, comme toute séquence PostgreSQL.
+
+`node scripts/migrate-sales.mjs` applique désormais les migrations 006 et 008 de façon réexécutable dans la même transaction. Aucun mode prévu n’a été converti en règlement réel. Aucun ancien encaissement n’a été modifié ou supprimé.

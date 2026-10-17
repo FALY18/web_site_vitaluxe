@@ -1,6 +1,60 @@
-import type { ModeLigne, StatutVente } from '../types'
+import type { ModeLigne, ModePaiement, StatutVente } from '../types'
 
 export class SaleError extends Error {}
+
+export function paymentMethod(value: unknown): ModePaiement {
+  if (value === 'especes' || value === 'mobile_money' || value === 'virement' || value === 'cheque') return value
+  throw new SaleError('Choisissez un mode de paiement valide.')
+}
+
+function moneyCents(value: string) {
+  decimal(value, 'Montant')
+  const [whole, fraction = ''] = value.split('.')
+  return BigInt(whole) * BigInt(100) + BigInt(fraction.padEnd(2, '0'))
+}
+
+export function paymentBalance(total: string, received: string) {
+  const remaining = moneyCents(total) - moneyCents(received)
+  if (remaining < BigInt(0)) throw new SaleError('Les règlements dépassent le total de la facture. Vérifiez le dossier.')
+  return { montantPaye: Number(moneyCents(received)) / 100, resteAPayer: Number(remaining) / 100 }
+}
+
+export function paymentOutcome(total: string, received: string, amount: string) {
+  const cents = moneyCents(amount)
+  if (cents <= BigInt(0)) throw new SaleError('Le montant reçu doit être strictement positif.')
+  const newReceived = moneyCents(received) + cents
+  if (newReceived > moneyCents(total)) throw new SaleError('Le montant reçu dépasse le solde de la facture.')
+  return {
+    montantPaye: (Number(newReceived) / 100).toFixed(2),
+    resteAPayer: (Number(moneyCents(total) - newReceived) / 100).toFixed(2),
+    statut: newReceived === moneyCents(total) ? 'payee' as const : 'partielle' as const,
+  }
+}
+
+export function validPaymentDate(value: unknown) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value)) || new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) !== value) throw new SaleError('Date de règlement invalide.')
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Indian/Antananarivo' }).format(new Date())
+  if (value > today) throw new SaleError('Un règlement reçu ne peut pas être daté dans le futur.')
+  return value
+}
+
+// Work in hundredths of m², matching plateau.surfaceRestanteM2, not the original area.
+export function surfaceAfterSale(current: string, sold: number) {
+  const available = decimal(current, 'Surface restante', 99999999.99)
+  if (!Number.isFinite(sold) || sold <= 0 || sold > 99999999.99) throw new SaleError('Surface vendue invalide.')
+  const remaining = Math.round(available * 100) - Math.round(sold * 100)
+  if (Math.round(sold * 100) === 0) throw new SaleError('Surface vendue inférieure à 0,01 m².')
+  if (remaining < 0) throw new SaleError(`Surface insuffisante : ${current} m² disponibles.`)
+  return (remaining / 100).toFixed(2)
+}
+
+export function surfaceAfterRestoration(current: string, restored: number) {
+  const available = decimal(current, 'Surface restante', 99999999.99)
+  if (!Number.isFinite(restored) || restored <= 0) throw new SaleError('Surface à restituer invalide.')
+  const remaining = Math.round(available * 100) + Math.round(restored * 100)
+  if (remaining > 9999999999) throw new SaleError('Surface restaurée hors limites.')
+  return (remaining / 100).toFixed(2)
+}
 
 export function modesForArticle(type: string, hasWholesale = false): ModeLigne[] {
   if (type === 'vitre') return hasWholesale ? ['decoupe', 'plateau_entier', 'plateau_gros'] : ['decoupe', 'plateau_entier']

@@ -3,13 +3,75 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import ts from 'typescript'
 
-async function loadSource(path) {
+async function moduleUrl(path, replacements = {}) {
   const source = await readFile(new URL(path, import.meta.url), 'utf8')
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2020 } })
-  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
+  let code = outputText
+  for (const [specifier, replacement] of Object.entries(replacements)) code = code.replaceAll(specifier, replacement)
+  return `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`
 }
+async function loadSource(path) { return import(await moduleUrl(path)) }
 const rules = await loadSource('../src/features/sell/lib/rules.ts')
 const { calculateInvoiceTotals } = await loadSource('../src/features/invoice/models/invoice.ts')
+
+test('receipt tokens bind the existing payment ID to the sale and authenticated user', async () => {
+  const fakeDb = `data:text/javascript;base64,${Buffer.from('export const db = { execute: async () => ({ rows: [{id: 17}] }) }').toString('base64')}`
+  const paymentTokens = await import(await moduleUrl('../src/features/invoice/lib/payment-token.ts', {
+    '@/db': fakeDb,
+    '@/features/sell/lib/rules': await moduleUrl('../src/features/sell/lib/rules.ts'),
+    'jose': import.meta.resolve('jose'),
+    'drizzle-orm': import.meta.resolve('drizzle-orm'),
+  }))
+  const token = await paymentTokens.issuePaymentToken(42, 7)
+  assert.equal(await paymentTokens.verifyPaymentToken(token, 42, 7), 17)
+  assert.equal(await paymentTokens.verifyPaymentToken(token, 42, 7), 17) // A retry targets the same primary key.
+  await assert.rejects(paymentTokens.verifyPaymentToken(token, 43, 7))
+  await assert.rejects(paymentTokens.verifyPaymentToken(token, 42, 8))
+  await assert.rejects(paymentTokens.verifyPaymentToken(`${token}tampered`, 42, 7))
+  await assert.rejects(paymentTokens.verifyPaymentToken(null, 42, 7))
+})
+
+test('partial and final receipts update the balance and invoice status', () => {
+  assert.deepEqual(rules.paymentOutcome('100000.00', '0.00', '30000.00'), { montantPaye: '30000.00', resteAPayer: '70000.00', statut: 'partielle' })
+  assert.deepEqual(rules.paymentOutcome('100000.00', '30000.00', '70000.00'), { montantPaye: '100000.00', resteAPayer: '0.00', statut: 'payee' })
+})
+test('receipt calculations preserve cents exactly and accept zero-total invoices', () => {
+  assert.deepEqual(rules.paymentOutcome('0.30', '0.10', '0.20'), { montantPaye: '0.30', resteAPayer: '0.00', statut: 'payee' })
+  assert.deepEqual(rules.paymentBalance('0.00', '0.00'), { montantPaye: 0, resteAPayer: 0 })
+})
+test('receipts cannot be zero, negative, overpaid or exceed a settled invoice', () => {
+  for (const amount of ['0', '-1', 'NaN', '0.001', '70.01']) assert.throws(() => rules.paymentOutcome('100.00', '30.00', amount))
+  assert.throws(() => rules.paymentOutcome('100.00', '100.00', '0.01'))
+  assert.throws(() => rules.paymentBalance('100.00', '100.01'))
+})
+test('actual receipt dates must exist and cannot be in the future', () => {
+  assert.equal(rules.validPaymentDate('2024-02-29'), '2024-02-29')
+  for (const date of ['2025-02-29', '2024-13-01', '', null, '9999-01-01']) assert.throws(() => rules.validPaymentDate(date))
+})
+
+test('successive cuts subtract from current remaining surface, not original dimensions', () => {
+  const afterFirst = rules.surfaceAfterSale('6.50', rules.cutQuantity(1.2, 0.8, 2))
+  const afterSecond = rules.surfaceAfterSale(afterFirst, rules.cutQuantity(1.2, 0.8, 1))
+  assert.equal(afterFirst, '4.58')
+  assert.equal(afterSecond, '3.62')
+})
+test('restoring an older cut preserves subsequent transactions', () => {
+  assert.equal(rules.surfaceAfterRestoration('3.62', 1.92), '5.54')
+  assert.equal(rules.surfaceAfterRestoration('0.00', 0.96), '0.96')
+})
+test('whole-sheet sale and exact exhaustion leave zero without floating point residue', () => {
+  assert.equal(rules.surfaceAfterSale('6.50', 6.5), '0.00')
+  assert.equal(rules.surfaceAfterSale('0.30', 0.1), '0.20')
+  assert.equal(rules.surfaceAfterSale('0.20', 0.2), '0.00')
+})
+test('insufficient, zero or nonfinite sheet debits are rejected', () => {
+  for (const sold of [0, -1, NaN, Infinity, 3.51, 0.001]) assert.throws(() => rules.surfaceAfterSale('3.50', sold))
+  assert.throws(() => rules.surfaceAfterRestoration('99999999.99', 1))
+})
+test('only the existing PostgreSQL payment enum values are accepted', () => {
+  for (const method of ['especes', 'mobile_money', 'virement', 'cheque']) assert.equal(rules.paymentMethod(method), method)
+  for (const method of ['', null, undefined, 'carte', 'toString', 'ESPECES']) assert.throws(() => rules.paymentMethod(method))
+})
 
 test('article types expose only their supported sale modes', () => {
   assert.deepEqual(rules.modesForArticle('vitre'), ['decoupe', 'plateau_entier'])

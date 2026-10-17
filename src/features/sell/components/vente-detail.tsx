@@ -13,6 +13,8 @@ function formatAr(val: string) {
 
 export function VenteDetailView({ vente }: { vente: VenteDetail }) {
   const isBrouillon = vente.statut === 'brouillon'
+  const sheetBalances = Array.from(new Map(vente.lignes.flatMap(line => line.plateauId != null && line.surfaceRestanteActuelleM2 != null
+    ? [[line.plateauId, { id: line.plateauId, article: line.articleDesignation, remaining: line.surfaceRestanteActuelleM2 }] as const] : [])).values())
   const totals = calculateInvoiceTotals(
     vente.total,
     vente.modeRemise,
@@ -71,6 +73,13 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
       )}
 
       {/* Lignes */}
+      {sheetBalances.length > 0 && <details className="rounded-xl border border-border bg-card p-3">
+        <summary className="cursor-pointer text-sm font-medium">Reste actuel des plateaux · {sheetBalances.length} plateau(x) · {new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(sheetBalances.reduce((sum, sheet) => sum + Number(sheet.remaining), 0))} m²</summary>
+        <p className="mt-2 text-xs text-muted-foreground">Stock actuel enregistré dans les plateaux, incluant les autres ventes et annulations.</p>
+        <dl className="mt-3 max-h-48 divide-y divide-border overflow-y-auto">
+          {sheetBalances.map(sheet => <div key={sheet.id} className="flex flex-wrap justify-between gap-2 py-2 text-sm"><dt>#{sheet.id} · {sheet.article}</dt><dd className="font-semibold text-primary">{sheet.remaining} m²</dd></div>)}
+        </dl>
+      </details>}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 max-h-[55dvh] overflow-auto">
         <div className="px-4 py-3 border-b border-foreground/8 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -78,7 +87,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
           </p>
         </div>
         {vente.lignes.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">Aucune ligne. Utilisez la saisie des articles pour pr?parer le bon.</p>
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">Aucune ligne. Utilisez la saisie des articles pour préparer le bon.</p>
         ) : (
           <table className="w-full min-w-[640px] text-sm">
             <thead className="sticky top-0 z-10 bg-card">
@@ -94,6 +103,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
                   <td className="px-4 py-3">
                     <p className="font-medium text-xs">{l.articleDesignation}</p>
                     <p className="text-[10px] text-muted-foreground font-mono">{l.articleCode}</p>
+                    {l.plateauId != null && <p className="mt-1 text-[10px] text-muted-foreground">Plateau #{l.plateauId} · reste après cette ligne : {l.surfaceRestanteApres ?? '—'} m²</p>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{MODE_LABELS[l.mode]}</td>
                   <td className="px-4 py-3 text-xs">{l.nombre}</td>

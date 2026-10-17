@@ -32,7 +32,7 @@ async function saveInvoice(venteId: number, final: boolean) {
       totalHt: totals.totalHt.toFixed(2),
       montantTva: totals.montantTva.toFixed(2),
       totalTtc: totals.totalTtc.toFixed(2),
-      statut: final ? 'emise' as const : 'brouillon' as const,
+      statut: final ? (totals.totalTtc === 0 ? 'payee' as const : 'emise' as const) : 'brouillon' as const,
     }
     if (existing) await tx.update(facture).set(values).where(eq(facture.id, existing.id))
     else await tx.insert(facture).values({ ...values, venteId })

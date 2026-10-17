@@ -64,9 +64,11 @@ export async function getVenteById(id: number): Promise<VenteDetail | null> {
       prixApplique: ligneVente.prixApplique,
       montant: ligneVente.montant,
       surfaceRestanteApres: ligneVente.surfaceRestanteApres,
+      surfaceRestanteActuelleM2: plateau.surfaceRestanteM2,
     })
     .from(ligneVente)
     .innerJoin(article, eq(ligneVente.articleId, article.id))
+    .leftJoin(plateau, eq(ligneVente.plateauId, plateau.id))
     .where(and(eq(ligneVente.venteId, id), eq(ligneVente.annulee, false)))
     .orderBy(ligneVente.id)
 

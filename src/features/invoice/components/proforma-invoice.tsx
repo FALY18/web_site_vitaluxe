@@ -1,5 +1,6 @@
 import type { ProformaInvoiceData } from '../types'
 import { formatDate, formatMoney, getModeLabel } from '../lib/format'
+import { PAIEMENT_LABELS } from '@/features/sell/types'
 
 function InvoicePaper({
   invoice,
@@ -40,7 +41,7 @@ function InvoicePaper({
 
         <div className="text-right">
           <p className="text-[9px] uppercase tracking-[0.2em] text-slate-500">
-            Pro forma
+            {invoice.statut === 'brouillon' ? 'Pro forma' : 'Facture'}
           </p>
           <p className="text-xl font-bold">{invoice.numero}</p>
           <p className="text-[11px] text-slate-500">{formatDate(vente.date)}</p>
@@ -63,6 +64,7 @@ function InvoicePaper({
         </div>
       </section>
 
+      {invoice.reglements.paiements.length > 0 && <div className="mb-3 text-[11px] text-slate-600"><p className="font-medium">Règlements reçus</p>{invoice.reglements.paiements.map(receipt => <p key={receipt.id}>{formatDate(receipt.date)} · {PAIEMENT_LABELS[receipt.mode]} · {formatMoney(receipt.montant)}</p>)}</div>}
       <div className="overflow-hidden rounded-lg border border-slate-200">
         <table className="w-full text-left text-[11px]">
           <thead className="bg-slate-100">
@@ -133,6 +135,8 @@ function InvoicePaper({
             <span>Net à payer</span>
             <span>{formatMoney(totals.totalTtc)}</span>
           </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-600"><span>Total reçu</span><span>{formatMoney(invoice.reglements.montantPaye)}</span></div>
+          <div className="flex items-center justify-between text-sm font-bold text-slate-900"><span>Reste à payer</span><span>{formatMoney(invoice.reglements.resteAPayer)}</span></div>
         </div>
       </div>
 

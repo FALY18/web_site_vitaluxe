@@ -1,12 +1,13 @@
 ﻿'use server'
 
 import { db } from '@/db'
-import { vente, facture, ligneVente, client, mouvementStock, plateau, article, articleVitreDetail, articleAluDetail, parametreSociete } from '@/db/schema'
+import { vente, facture, paiement, ligneVente, client, mouvementStock, plateau, article, articleVitreDetail, articleAluDetail, parametreSociete } from '@/db/schema'
 import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/features/auth/session'
 import { calculateInvoiceTotals } from '@/features/invoice/models/invoice'
-import { SaleError, positiveInteger, decimal, dimension, lineAmounts, modesForArticle, cutFits, cutQuantity, canTransition } from '../lib/rules'
+import { SaleError, positiveInteger, decimal, dimension, lineAmounts, modesForArticle, cutFits, cutQuantity, canTransition, paymentMethod, paymentOutcome, validPaymentDate, surfaceAfterSale, surfaceAfterRestoration } from '../lib/rules'
+import { verifyPaymentToken } from '@/features/invoice/lib/payment-token'
 import type { VenteFormState, LigneFormState, ModeLigne, VenteOptionsFormState, StatutVente } from '../types'
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
@@ -52,7 +53,7 @@ async function restoreLine(tx: Transaction, line: typeof ligneVente.$inferSelect
   if (line.plateauId) {
     const [sheet] = await tx.select().from(plateau).where(eq(plateau.id, line.plateauId)).for('update')
     if (!sheet) throw new SaleError('Plateau introuvable.')
-    stockAfter = (Number(sheet.surfaceRestanteM2) + restore).toFixed(2)
+    stockAfter = surfaceAfterRestoration(sheet.surfaceRestanteM2, restore)
     await tx.update(plateau).set({ surfaceRestanteM2: stockAfter, statut: 'disponible' }).where(eq(plateau.id, sheet.id))
   } else {
     const [alu] = await tx.select().from(articleAluDetail).where(eq(articleAluDetail.articleId, line.articleId)).for('update')
@@ -97,7 +98,7 @@ export async function addLigne(_prev: LigneFormState, data: FormData): Promise<L
     const articleId = positiveInteger(Number(data.get('articleId')), 'Article')
     const nombre = positiveInteger(Number(data.get('nombre')), 'Nombre')
     const mode = String(data.get('mode')) as ModeLigne
-    await db.transaction(async tx => {
+    const stockResult = await db.transaction(async tx => {
       const sale = await lockSale(tx, venteId)
       if (sale.statut !== 'brouillon') throw new SaleError('Seul un brouillon peut recevoir des articles.')
       const [item] = await tx.select().from(article).where(eq(article.id, articleId)).for('share')
@@ -134,7 +135,7 @@ export async function addLigne(_prev: LigneFormState, data: FormData): Promise<L
           stockQuantity = remaining
           price = mode === 'plateau_gros' ? glass.prixPlateauGros! : glass.prixPlateauEntier
         }
-        stockAfter = (remaining - stockQuantity).toFixed(2)
+        stockAfter = surfaceAfterSale(sheet.surfaceRestanteM2, stockQuantity)
         await tx.update(plateau).set({ surfaceRestanteM2: stockAfter, statut: mode !== 'decoupe' ? 'vendu_entier' : Number(stockAfter) === 0 ? 'epuise' : 'disponible' }).where(eq(plateau.id, sheetId))
       } else if (item.type === 'alu') {
         const [alu] = await tx.select().from(articleAluDetail).where(eq(articleAluDetail.articleId, articleId)).for('update')
@@ -152,9 +153,10 @@ export async function addLigne(_prev: LigneFormState, data: FormData): Promise<L
       const [line] = await tx.insert(ligneVente).values({ venteId, articleId, plateauId: sheetId, mode, nombre, longueurM: length, hauteurM: height, prixApplique: price, ...amounts, surfaceRestanteApres: sheetId ? stockAfter : null }).returning()
       if (stockAfter != null) await tx.insert(mouvementStock).values({ articleId, plateauId: sheetId, ligneVenteId: line.id, utilisateurId: user.id, type: 'vente', quantite: (-stockQuantity).toFixed(2), stockApres: stockAfter, motif: `Bon ${sale.numero} · ${mode}` })
       await recalculate(tx, venteId)
+      return sheetId && stockAfter != null ? { plateauId: sheetId, surfaceRestanteM2: stockAfter } : {}
     })
     refresh(venteId)
-    return { success: true }
+    return { success: true, ...stockResult }
   } catch (error) { return formError(error) }
 }
 
@@ -217,16 +219,46 @@ export async function updateVenteOptions(venteId: number, _prev: VenteOptionsFor
     if (modeRemise !== 'pourcentage' && modeRemise !== 'montant') throw new SaleError('Mode de remise invalide.')
     const valeurRemise = decimal(data.get('valeurRemise'), 'Remise')
     const fraisLivraison = decimal(data.get('fraisLivraison'), 'Livraison')
+    const encaisser = data.get('encaisser') === 'on'
+    const receipt = encaisser ? {
+      id: await verifyPaymentToken(data.get('paymentToken'), venteId, user.id),
+      mode: paymentMethod(data.get('modePaiement')),
+      montant: decimal(data.get('montantRecu'), 'Montant reçu').toFixed(2),
+      date: validPaymentDate(data.get('datePaiement')),
+    } : null
     await db.transaction(async tx => {
       const sale = await lockSale(tx, venteId)
       if (!['confirmee', 'livree'].includes(sale.statut)) throw new SaleError('Confirmez la vente avant de régler la facturation.')
       if ((modeRemise === 'pourcentage' && valeurRemise > 100) || (modeRemise === 'montant' && valeurRemise > Number(sale.total))) throw new SaleError('La remise dépasse le montant autorisé.')
       const invoices = await tx.select().from(facture).where(eq(facture.venteId, venteId)).for('update')
-      if (invoices.some(invoice => invoice.statut !== 'brouillon')) throw new SaleError('La facture est verrouillée.')
+      if (invoices.length > 1) throw new SaleError('Plusieurs factures existent pour cette vente. Vérifiez le dossier.')
+      let invoice = invoices[0]
+      if (invoice?.statut === 'annulee') throw new SaleError('Cette facture est annulée.')
+      if (receipt) {
+        const [existing] = await tx.select().from(paiement).where(eq(paiement.id, receipt.id))
+        if (existing) {
+          if (existing.factureId !== invoice?.id || existing.mode !== receipt.mode || existing.montant !== receipt.montant || existing.date !== receipt.date) throw new SaleError('Cette référence de règlement a déjà été utilisée.')
+          return // Retry of the same request: never record a receipt twice.
+        }
+      }
+      const locked = invoice && invoice.statut !== 'brouillon'
+      if (locked && (invoice.modeRemise !== modeRemise || Number(invoice.valeurRemise) !== valeurRemise || Number(invoice.fraisLivraison) !== fraisLivraison)) throw new SaleError('Les conditions d’une facture émise ne peuvent plus être modifiées.')
       const totals = calculateInvoiceTotals(sale.total, modeRemise, valeurRemise, fraisLivraison)
       if (totals.totalTtc > 999999999999.99) throw new SaleError('Total supérieur à la limite autorisée.')
-      await tx.update(vente).set({ modeRemise, valeurRemise: valeurRemise.toFixed(2), fraisLivraison: fraisLivraison.toFixed(2) }).where(eq(vente.id, venteId))
-      await tx.update(facture).set({ caissierId: user.id, sousTotalHt: totals.sousTotalHt.toFixed(2), modeRemise, valeurRemise: valeurRemise.toFixed(2), montantRemise: totals.montantRemise.toFixed(2), fraisLivraison: fraisLivraison.toFixed(2), totalHt: totals.totalHt.toFixed(2), montantTva: '0', totalTtc: totals.totalTtc.toFixed(2) }).where(eq(facture.venteId, venteId))
+      if (!locked) {
+        const [received] = invoice ? await tx.select({ total: sql<string>`COALESCE(SUM(${paiement.montant}), 0)` }).from(paiement).where(eq(paiement.factureId, invoice.id)) : []
+        if (received && Number(received.total) > 0) throw new SaleError('Une facture brouillon possède déjà des règlements. Vérifiez le dossier.')
+        await tx.update(vente).set({ modeRemise, valeurRemise: valeurRemise.toFixed(2), fraisLivraison: fraisLivraison.toFixed(2) }).where(eq(vente.id, venteId))
+        const snapshot = { caissierId: user.id, sousTotalHt: totals.sousTotalHt.toFixed(2), modeRemise: totals.modeRemise, valeurRemise: valeurRemise.toFixed(2), montantRemise: totals.montantRemise.toFixed(2), fraisLivraison: fraisLivraison.toFixed(2), totalHt: totals.totalHt.toFixed(2), montantTva: '0', totalTtc: totals.totalTtc.toFixed(2) }
+        if (invoice) [invoice] = await tx.update(facture).set(snapshot).where(eq(facture.id, invoice.id)).returning()
+        else if (receipt) [invoice] = await tx.insert(facture).values({ ...snapshot, venteId, statut: 'brouillon' }).returning()
+      }
+      if (receipt && invoice) {
+        const [received] = await tx.select({ total: sql<string>`COALESCE(SUM(${paiement.montant}), 0)` }).from(paiement).where(eq(paiement.factureId, invoice.id))
+        const outcome = paymentOutcome(invoice.totalTtc, received.total, receipt.montant)
+        await tx.insert(paiement).values({ ...receipt, factureId: invoice.id })
+        await tx.update(facture).set({ statut: outcome.statut, caissierId: user.id }).where(eq(facture.id, invoice.id))
+      }
     })
     refresh(venteId)
     return { success: true }

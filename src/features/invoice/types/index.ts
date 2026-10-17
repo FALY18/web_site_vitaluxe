@@ -1,4 +1,4 @@
-import type { VenteDetail } from '@/features/sell/types'
+import type { ModePaiement, VenteDetail } from '@/features/sell/types'
 
 export type CompanyProfile = {
   nom: string
@@ -9,7 +9,12 @@ export type CompanyProfile = {
   toleranceMesureM: string | null
 }
 
+export type PaiementRow = { id: number; date: string; montant: string; mode: ModePaiement }
+export type PaymentSummary = { paiements: PaiementRow[]; montantPaye: number; resteAPayer: number }
+
 export type ProformaInvoiceData = {
+  reglements: PaymentSummary
+  statut: 'brouillon' | 'emise' | 'partielle' | 'payee' | 'annulee'
   numero: string
   vente: VenteDetail
   company: CompanyProfile
