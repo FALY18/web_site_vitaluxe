@@ -7,7 +7,7 @@ export function InvoicePrintButton() {
     <Button
       type="button"
       size="sm"
-      onClick={() => window.print()}
+      onClick={async () => { await document.fonts.ready; window.print() }}
       className="print:hidden"
     >
       Télécharger la facture

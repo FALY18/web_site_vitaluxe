@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/sales-rules.test.mjs",
+    "test": "node --test tests/sales-rules.test.mjs tests/invoice-render.test.mjs",
     "test:payments:db": "node scripts/test-payment-flow.mjs",
     "db:audit": "node scripts/audit-database.mjs",
     "db:audit:stock": "node scripts/audit-stock-payments.mjs",
