@@ -11,6 +11,19 @@ import { cutQuantity, lineAmounts, modesForArticle, surfaceAfterSale } from '../
 
 type Props = { venteId: number; articles: ArticleWithDetail[]; plateaux: PlateauDisponible[] }
 
+function articleLabel(article: ArticleWithDetail) {
+  const thickness = article.vitreDetail?.epaisseurMm
+  return [
+    article.designation,
+    article.type === 'vitre' ? thickness != null ? `${Number(thickness).toLocaleString('fr-FR')} mm` : 'Épaisseur non renseignée' : null,
+    article.couleur,
+  ].filter(Boolean).join(' · ')
+}
+
+function normalizeSearch(value: string) {
+  return value.toLocaleLowerCase('fr').replace(/,/g, '.').replace(/\s+/g, '')
+}
+
 export function LigneForm({ venteId, articles, plateaux }: Props) {
   const [articleId, setArticleId] = useState('')
   const [search, setSearch] = useState('')
@@ -42,7 +55,7 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
     try { remainingPreview = surfaceAfterSale(sheet.surfaceRestanteM2, whole ? Number(sheet.surfaceRestanteM2) : quantity) }
     catch { stockError = 'La surface demandée dépasse le reste disponible du plateau.' }
   }
-  const selectedItems = articles.filter(a => String(a.id) === articleId || `${a.code} ${a.designation} ${a.couleur ?? ''}`.toLocaleLowerCase('fr').includes(search.toLocaleLowerCase('fr')))
+  const selectedItems = articles.filter(a => String(a.id) === articleId || normalizeSearch(`${a.code} ${articleLabel(a)}`).includes(normalizeSearch(search)))
   const [state, action, pending] = useActionState(async (prev: LigneFormState, data: FormData) => {
     const result = await addLigne(prev, data)
     if (result.success) {
@@ -61,7 +74,7 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
       <input type="hidden" name="mode" value={mode} />
       <div className="grid gap-1.5">
         <label htmlFor="sale-search" className="text-xs font-medium text-muted-foreground">Rechercher un article</label>
-        <Input id="sale-search" type="search" placeholder="Code, désignation, couleur…" value={search} onChange={e => setSearch(e.target.value)} />
+        <Input id="sale-search" type="search" placeholder="Désignation, épaisseur (6 mm), couleur…" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
       <div className="grid gap-1.5">
         <label htmlFor="sale-article" className="text-xs font-medium text-muted-foreground">Article *</label>
@@ -74,7 +87,7 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
           setNombre('1')
         }}>
           <option value="">Choisir un article</option>
-          {selectedItems.map(a => <option key={a.id} value={a.id}>{a.code} · {a.designation}{a.couleur ? ` · ${a.couleur}` : ''}</option>)}
+          {selectedItems.map(a => <option key={a.id} value={a.id}>{articleLabel(a)}</option>)}
         </select>
         {selectedItems.length === 0 && <p className="text-xs text-muted-foreground">Aucun article correspondant.</p>}
       </div>
