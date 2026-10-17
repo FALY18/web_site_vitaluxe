@@ -13,7 +13,12 @@ function formatAr(value: number) {
   return `${value.toLocaleString('fr-MG', { maximumFractionDigits: 2 })} Ar`
 }
 
-export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail; locked?: boolean }) {
+export function VenteOptionsForm({ vente, locked = false, onSaved, onDirty }: {
+  vente: VenteDetail
+  locked?: boolean
+  onSaved?: () => void
+  onDirty?: () => void
+}) {
   const [mode, setMode] = useState<'pourcentage' | 'montant'>(vente.modeRemise)
   const [valeur, setValeur] = useState(vente.valeurRemise)
   const [livraison, setLivraison] = useState(vente.fraisLivraison)
@@ -31,18 +36,19 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
     if (result.success) {
       setValeur(String(formData.get('valeurRemise') ?? '0'))
       setLivraison(String(formData.get('fraisLivraison') ?? '0'))
+      onSaved?.()
     }
     return result
   }, initial)
 
   return (
-    <form action={action} className="rounded-xl bg-card ring-1 ring-foreground/10 p-4 sm:p-5 flex flex-col gap-4">
+    <form action={action} onChange={onDirty} className="rounded-xl bg-card ring-1 ring-foreground/10 p-4 sm:p-5 flex flex-col gap-4">
       <div>
         <h3 className="text-sm font-semibold">Étape 1 · Conditions de facturation</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Enregistrez la remise et la livraison avant de générer la facture. Les actions de facturation utilisent les dernières conditions enregistrées. Aucune TVA n’est calculée.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Vérifiez la remise et les frais, puis continuez vers la facture. Aucune TVA n’est calculée.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <fieldset disabled={pending || locked} className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`discount-mode-${vente.id}`} className="text-xs text-muted-foreground">Type de remise</label>
           <select
@@ -88,7 +94,7 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
             required
           />
         </div>
-      </div>
+      </fieldset>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-foreground/3 px-3 py-2.5 text-xs">
         <span className="text-muted-foreground">Remise calculée : <strong className="text-foreground">{formatAr(preview.remise)}</strong></span>
@@ -99,7 +105,7 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
       {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
       {state.success && <p role="status" className="text-sm text-emerald-700">Options enregistrées.</p>}
       {!locked && <Button type="submit" size="sm" disabled={pending} className="self-end">
-        {pending ? 'Enregistrement…' : 'Enregistrer remise et livraison'}
+        {pending ? 'Enregistrement…' : onSaved ? 'Enregistrer et voir la facture →' : 'Enregistrer remise et livraison'}
       </Button>}
     </form>
   )

@@ -4,7 +4,7 @@ import { getArticles } from '@/features/article/queries/article'
 import { getProformaInvoiceData, getFactureByVenteId } from '@/features/invoice/queries/invoice'
 import { createProformaInvoice, createFinalInvoice } from '@/features/invoice/action/invoice'
 import { VenteDetailView } from '@/features/sell/components/vente-detail'
-import { VenteOptionsForm } from '@/features/sell/components/vente-options-form'
+import { InvoiceSteps } from '@/features/sell/components/invoice-steps'
 import { VenteWorkspace } from '@/features/sell/components/vente-workspace'
 import { SaleActionForm } from '@/features/sell/components/sale-action-form'
 import { ProformaInvoice } from '@/features/invoice/components/proforma-invoice'
@@ -33,8 +33,7 @@ export default async function VenteDetailPage({ params }: { params: Promise<{ id
   ])
   const locked = Boolean(factureData && factureData.statut !== 'brouillon')
   const invoice = canInvoice ? (
-    <div className="grid gap-5">
-      <VenteOptionsForm vente={venteData} locked={locked} />
+    <InvoiceSteps vente={venteData} locked={locked}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold">Facture</h2>
         <div className="flex flex-wrap items-start gap-2">
@@ -51,7 +50,7 @@ export default async function VenteDetailPage({ params }: { params: Promise<{ id
       </div>
       {factureData && <p role="status" className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">Facture {factureData.numero} · {factureData.statut === 'brouillon' ? 'Pro forma' : 'Émise / verrouillée'}</p>}
       {invoiceData ? <ProformaInvoice invoice={invoiceData} /> : <p role="status" className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">Renseignez les informations de la société avant de prévisualiser la facture.</p>}
-    </div>
+    </InvoiceSteps>
   ) : undefined
 
   return (
