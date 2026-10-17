@@ -19,7 +19,7 @@ export function NouvelleVenteForm() {
 
   return (
     <form action={action} className="flex flex-col gap-5">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Nom du client *</label>
           <Input name="clientNom" required placeholder="ex: Rakoto Jean" />
@@ -30,7 +30,7 @@ export function NouvelleVenteForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Date</label>
           <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />

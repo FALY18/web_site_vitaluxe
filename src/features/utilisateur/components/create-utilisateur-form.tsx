@@ -23,7 +23,7 @@ export function CreateUtilisateurForm({ onSuccess }: { onSuccess?: () => void })
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nom complet</label>
           <Input name="nom" required placeholder="Jean Dupont" />
@@ -34,7 +34,7 @@ export function CreateUtilisateurForm({ onSuccess }: { onSuccess?: () => void })
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mot de passe</label>
           <Input name="motDePasse" type="password" required placeholder="••••••••" />

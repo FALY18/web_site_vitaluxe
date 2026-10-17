@@ -1,7 +1,6 @@
 'use client'
 
 import { logout } from '@/features/auth/action/auth'
-import { Button } from '@/components/ui/button'
 import { LogOut, User } from 'lucide-react'
 import type { SessionUser } from '@/features/auth/types'
 
@@ -22,8 +21,8 @@ export function UserMenu({ user }: { user: SessionUser }) {
         <p className="text-[10px] text-muted-foreground">{roleLabel[user.role]}</p>
       </div>
       <form action={logout}>
-        <button type="submit" title="Déconnexion">
-          <LogOut className="size-3.5 text-muted-foreground hover:text-destructive transition-colors" />
+        <button type="submit" title="Déconnexion" aria-label="Se déconnecter" className="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground">
+          <LogOut aria-hidden="true" className="size-4" />
         </button>
       </form>
     </div>

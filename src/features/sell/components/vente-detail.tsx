@@ -22,7 +22,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
   return (
     <div className="flex flex-col gap-6">
       {/* En-tête */}
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-5 flex items-start justify-between gap-4">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-5 flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <span className="text-2xl font-heading font-bold text-[#c8a96e]">#{vente.numero}</span>
@@ -41,7 +41,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
             <span className="font-medium">{vente.commercialNom}</span>
           </p>
         </div>
-        <div className="text-right">
+        <div className="min-w-0 break-words sm:text-right">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Net à payer</p>
           <p className="text-xl font-heading font-bold">{formatAr(totals.totalTtc.toFixed(2))}</p>
           {(Number(vente.valeurRemise) > 0 || Number(vente.fraisLivraison) > 0) && (
@@ -54,7 +54,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
 
       {/* Actions statut */}
       {isBrouillon && (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <form action={updateStatutVente.bind(null, vente.id, 'confirmee')}>
             <Button size="sm" type="submit">Confirmer la vente</Button>
           </form>
@@ -70,7 +70,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
       )}
 
       {/* Lignes */}
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
         <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Lignes ({vente.lignes.length})
@@ -79,7 +79,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
         {vente.lignes.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">Aucune ligne. Ajoutez des articles ci-dessous.</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-white/5">
                 {['Article', 'Mode', 'Qté', 'Dimensions', 'Prix unit.', 'Montant', ''].map((h) => (

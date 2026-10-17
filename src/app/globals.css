@@ -32,7 +32,7 @@
   --secondary: #1a1a1a;
   --secondary-foreground: #f0ede8;
   --muted: #1e1e1e;
-  --muted-foreground: #888;
+  --muted-foreground: #a1a1a1;
   --accent: #c8a96e;
   --accent-foreground: #0a0a0a;
   --border: rgba(255,255,255,0.08);
@@ -321,7 +321,7 @@
   width: 24px; height: 1px;
   background: var(--gold);
 }
-h1 {
+.hero h1 {
   font-size: clamp(2.8rem, 5vw, 4.5rem);
   font-weight: 800;
   line-height: 1.05;
@@ -921,4 +921,33 @@ h1 {
   .site-footer { padding: 2rem 1.25rem; flex-direction: column; align-items: flex-start; }
   .bag-drawer { width: 100vw; }
   .hero { padding-top: 4.5rem; }
+}
+
+/* Dashboard accessibility and responsive spacing */
+.dashboard-shell :focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+.dashboard-shell main > div.p-6 {
+  padding: clamp(1rem, 3vw, 2rem);
+}
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 300;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.skip-link:focus { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

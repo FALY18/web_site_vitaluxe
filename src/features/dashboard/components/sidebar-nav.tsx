@@ -31,21 +31,22 @@ export function SidebarNav({ role }: { role: Role }) {
   const nav = NAV.filter((item) => item.roles.includes(role as never))
 
   return (
-    <nav className="flex-1 flex flex-col gap-1 p-3 overflow-y-auto">
+    <nav aria-label="Navigation principale" className="flex gap-1 overflow-x-auto p-3 lg:flex-1 lg:flex-col lg:overflow-y-auto">
       {nav.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'))
         return (
           <Link
             key={href}
             href={href}
+            aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+              'flex min-h-11 shrink-0 items-center gap-3 whitespace-nowrap px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
               active
                 ? 'bg-[#c8a96e]/15 text-[#c8a96e] border border-[#c8a96e]/25'
                 : 'text-muted-foreground hover:text-foreground hover:bg-white/5 border border-transparent'
             )}
           >
-            <Icon className="size-4 shrink-0" />
+            <Icon aria-hidden="true" className="size-4 shrink-0" />
             {label}
           </Link>
         )

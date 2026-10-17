@@ -9,7 +9,7 @@ export function AluFields() {
           Le prix à la barre est saisi dans le champ "Prix de vente" ci-dessus.
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Prix du pack (Ar) *</label>
           <Input name="prixPack" type="number" step="0.01" min="0" placeholder="0.00" required />

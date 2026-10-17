@@ -69,7 +69,7 @@ export function ArticleForm({ categories, onSuccess }: Props) {
         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Type d'article *
         </label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {TYPES.map((t) => (
             <button key={t} type="button" onClick={() => setType(t)}
               className={cn(
@@ -84,7 +84,7 @@ export function ArticleForm({ categories, onSuccess }: Props) {
       </div>
 
       {/* Code + Désignation */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground flex items-center gap-1.5">
             Code article
@@ -110,7 +110,7 @@ export function ArticleForm({ categories, onSuccess }: Props) {
       </div>
 
       {/* Catégorie + Couleur */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Catégorie *</label>
           <select name="categorieId" required
@@ -127,7 +127,7 @@ export function ArticleForm({ categories, onSuccess }: Props) {
       </div>
 
       {/* Unité + Prix — contextuels selon type */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Unité de vente *</label>
           <select name="uniteVente" required key={type}

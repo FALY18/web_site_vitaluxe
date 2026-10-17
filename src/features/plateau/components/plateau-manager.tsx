@@ -41,7 +41,7 @@ function CreateForm({ articlesVitre }: { articlesVitre: Props['articlesVitre'] }
   return (
     <form action={action} className="p-4 rounded-xl bg-card ring-1 ring-foreground/10 flex flex-col gap-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nouveau plateau</p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Article vitre *</label>
           <select name="articleId" required
@@ -57,7 +57,7 @@ function CreateForm({ articlesVitre }: { articlesVitre: Props['articlesVitre'] }
           <Input name="emplacement" placeholder="ex: A-01, Rack 3…" />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Longueur origine (m) *</label>
           <Input name="longueurOrigineM" type="number" step="0.001" min="0.001" placeholder="ex: 3.210" required />
@@ -108,7 +108,7 @@ export function PlateauManager({ plateaux, articlesVitre }: Props) {
       <CreateForm articlesVitre={articlesVitre} />
 
       {/* Stats rapides */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {(['disponible', 'epuise', 'vendu_entier'] as StatutPlateau[]).map((s) => (
           <div key={s} className="rounded-xl bg-card ring-1 ring-foreground/10 p-4 flex flex-col gap-1">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">{STATUT_PLATEAU_LABELS[s]}</p>
@@ -118,8 +118,8 @@ export function PlateauManager({ plateaux, articlesVitre }: Props) {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-white/8">
               {['Article', 'Dimensions', 'Surface restante', 'Emplacement', 'Statut', ''].map((h) => (

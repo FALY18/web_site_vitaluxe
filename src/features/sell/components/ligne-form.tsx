@@ -57,7 +57,7 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Article */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Article *</label>
@@ -89,7 +89,7 @@ export function LigneForm({ venteId, articles, plateaux }: Props) {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Nombre *</label>
           <Input name="nombre" type="number" min="1" defaultValue="1" required />

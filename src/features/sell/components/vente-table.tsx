@@ -20,8 +20,8 @@ export function VenteTable({ ventes }: { ventes: VenteRow[] }) {
   }
 
   return (
-    <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
+      <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="border-b border-white/8">
             {['N° Bon', 'Date', 'Client', 'Commercial', 'Net à payer', 'Statut', ''].map((h) => (

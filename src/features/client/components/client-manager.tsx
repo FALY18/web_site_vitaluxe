@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pencil, Trash2, X, Check, Plus } from 'lucide-react'
 import type { ClientRow, ClientFormState } from '../types'
-import { cn } from '@/lib/utils'
 
 const initial: ClientFormState = {}
 
@@ -26,16 +25,16 @@ function CreateForm() {
   )
 
   return (
-    <form action={action} className="flex items-end gap-2 p-3 rounded-xl bg-card ring-1 ring-foreground/10">
-      <div className="flex flex-col gap-1 flex-1">
+    <form action={action} className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-end p-3 rounded-xl bg-card ring-1 ring-foreground/10">
+      <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
         <label className="text-xs text-muted-foreground">Nom *</label>
         <Input name="nom" required placeholder="Rakoto Jean" autoFocus />
       </div>
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
         <label className="text-xs text-muted-foreground">Téléphone</label>
         <Input name="telephone" placeholder="034 00 000 00" />
       </div>
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
         <label className="text-xs text-muted-foreground">Adresse</label>
         <Input name="adresse" placeholder="Antananarivo" />
       </div>
@@ -58,17 +57,17 @@ function EditRow({ client, onDone }: { client: ClientRow; onDone: () => void }) 
   return (
     <tr className="border-b border-white/5 bg-white/3">
       <td colSpan={5} className="px-4 py-3">
-        <form action={action} className="flex items-end gap-2">
+        <form action={action} className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <input type="hidden" name="id" value={client.id} />
-          <div className="flex flex-col gap-1 flex-1">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
             <label className="text-xs text-muted-foreground">Nom *</label>
             <Input name="nom" defaultValue={client.nom} required autoFocus />
           </div>
-          <div className="flex flex-col gap-1 flex-1">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
             <label className="text-xs text-muted-foreground">Téléphone</label>
             <Input name="telephone" defaultValue={client.telephone ?? ''} />
           </div>
-          <div className="flex flex-col gap-1 flex-1">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-1">
             <label className="text-xs text-muted-foreground">Adresse</label>
             <Input name="adresse" defaultValue={client.adresse ?? ''} />
           </div>
@@ -90,8 +89,8 @@ export function ClientManager({ clients }: { clients: ClientRow[] }) {
     <div className="flex flex-col gap-4">
       <CreateForm />
 
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-white/8">
               {['Nom', 'Téléphone', 'Adresse', 'Ventes', ''].map((h) => (

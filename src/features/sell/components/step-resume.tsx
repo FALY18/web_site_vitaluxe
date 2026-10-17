@@ -35,11 +35,11 @@ export function StepResume({ vente }: { vente: VenteDetail }) {
       </div>
 
       {/* Lignes */}
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
         <div className="px-4 py-3 border-b border-white/8">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Détail des articles</p>
         </div>
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-white/5">
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Article</th>

@@ -9,7 +9,7 @@ export function VitreFields() {
           Le prix au m² est saisi dans le champ "Prix de vente" ci-dessus.
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Épaisseur (mm) *</label>
           <Input name="epaisseurMm" type="number" step="0.1" min="0.1" placeholder="ex: 6.0" required />

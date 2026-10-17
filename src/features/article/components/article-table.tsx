@@ -19,8 +19,8 @@ export function ArticleTable({ articles, role }: { articles: ArticleWithDetail[]
   }
 
   return (
-    <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
+      <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="border-b border-white/8">
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Code</th>

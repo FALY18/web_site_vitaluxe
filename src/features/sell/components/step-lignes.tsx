@@ -41,14 +41,14 @@ export function StepLignes({ venteId, articles, plateaux, lignes, onNext }: Prop
     <div className="flex flex-col gap-5">
       {/* Lignes existantes */}
       {lignes.length > 0 && (
-        <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-hidden">
+        <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
           <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {lignes.length} ligne{lignes.length > 1 ? 's' : ''}
             </p>
             <p className="text-sm font-semibold text-[#c8a96e]">{formatAr(total.toFixed(2))}</p>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <tbody>
               {lignes.map((l) => (
                 <tr key={l.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
@@ -93,7 +93,7 @@ export function StepLignes({ venteId, articles, plateaux, lignes, onNext }: Prop
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground">Article *</label>
             <select name="articleId" required
@@ -121,7 +121,7 @@ export function StepLignes({ venteId, articles, plateaux, lignes, onNext }: Prop
           )}
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground">Nombre *</label>
             <Input name="nombre" type="number" min="1" defaultValue="1" required />
