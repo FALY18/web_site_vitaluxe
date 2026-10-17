@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import type { VenteFormState } from '../types'
 import type { ClientRow } from '@/features/client/types'
-import { UserRound, Plus } from 'lucide-react'
+import { UserRound } from 'lucide-react'
 
 type Props = {
   clients: ClientRow[]
@@ -42,8 +42,8 @@ export function StepClient({ clients, onSuccess }: Props) {
             className={cn(
               'px-4 py-2 rounded-lg text-xs font-semibold border transition-all',
               mode === m
-                ? 'bg-[#c8a96e]/15 text-[#c8a96e] border-[#c8a96e]/30'
-                : 'text-muted-foreground border-white/10 hover:border-white/20'
+                ? 'bg-[#c8a96e]/15 text-primary border-[#c8a96e]/30'
+                : 'text-muted-foreground border-foreground/10 hover:border-foreground/20'
             )}>
             {m === 'existing' ? 'Client existant' : 'Nouveau client'}
           </button>
@@ -57,16 +57,16 @@ export function StepClient({ clients, onSuccess }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="max-h-64 overflow-y-auto flex flex-col gap-1 rounded-lg border border-white/10 p-1">
+          <div className="max-h-64 overflow-y-auto flex flex-col gap-1 rounded-lg border border-foreground/10 p-1">
             {filtered.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-4">Aucun résultat</p>
             )}
             {filtered.map((c) => (
               <label key={c.id}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-white/5 transition-colors has-[:checked]:bg-[#c8a96e]/10 has-[:checked]:border has-[:checked]:border-[#c8a96e]/25">
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-foreground/5 transition-colors has-[:checked]:bg-[#c8a96e]/10 has-[:checked]:border has-[:checked]:border-[#c8a96e]/25">
                 <input type="radio" name="clientId" value={c.id} className="accent-[#c8a96e]" required />
                 <div className="size-7 rounded-full bg-[#c8a96e]/10 border border-[#c8a96e]/20 flex items-center justify-center shrink-0">
-                  <UserRound className="size-3.5 text-[#c8a96e]" />
+                  <UserRound className="size-3.5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{c.nom}</p>

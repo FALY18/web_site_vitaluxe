@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test tests/sales-rules.test.mjs",
+    "db:audit": "node scripts/audit-database.mjs",
+    "db:migrate:sales": "node scripts/migrate-sales.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

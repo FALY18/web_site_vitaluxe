@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { vente, ligneVente, client, utilisateur, article, plateau, articleVitreDetail, categorie } from '@/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { and, eq, desc } from 'drizzle-orm'
 import type { VenteRow, VenteDetail, ClientRow, PlateauDisponible } from '../types'
 import type { ArticleWithDetail, TypeArticle, UniteVente } from '@/features/article/types'
 
@@ -67,7 +67,8 @@ export async function getVenteById(id: number): Promise<VenteDetail | null> {
     })
     .from(ligneVente)
     .innerJoin(article, eq(ligneVente.articleId, article.id))
-    .where(eq(ligneVente.venteId, id))
+    .where(and(eq(ligneVente.venteId, id), eq(ligneVente.annulee, false)))
+    .orderBy(ligneVente.id)
 
   return { ...v, lignes: lignes as VenteDetail['lignes'] } as VenteDetail
 }

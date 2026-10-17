@@ -1,126 +1,127 @@
-'use client'
+﻿'use client'
 
 import { useActionState, useState } from 'react'
 import { addLigne } from '../action/vente'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MODE_LABELS } from '../types'
-import type { LigneFormState, ModeLigne } from '../types'
+import type { LigneFormState, ModeLigne, PlateauDisponible } from '../types'
 import type { ArticleWithDetail } from '@/features/article/types'
-import type { PlateauDisponible } from '../types'
-import { cn } from '@/lib/utils'
+import { cutQuantity, lineAmounts, modesForArticle } from '../lib/rules'
 
-type Props = {
-  venteId: number
-  articles: ArticleWithDetail[]
-  plateaux: PlateauDisponible[]
-}
-
-const MODES: ModeLigne[] = ['decoupe', 'plateau_entier', 'plateau_gros', 'barre', 'pack', 'standard']
-const initial: LigneFormState = {}
+type Props = { venteId: number; articles: ArticleWithDetail[]; plateaux: PlateauDisponible[] }
 
 export function LigneForm({ venteId, articles, plateaux }: Props) {
+  const [articleId, setArticleId] = useState('')
+  const [search, setSearch] = useState('')
   const [mode, setMode] = useState<ModeLigne>('standard')
-  const [selectedArticle, setSelectedArticle] = useState<ArticleWithDetail | null>(null)
-
-  const [state, action, pending] = useActionState(async (prev: LigneFormState, fd: FormData) => {
-    const res = await addLigne(prev, fd)
-    return res
-  }, initial)
-
-  const needsPlateau = ['decoupe', 'plateau_entier', 'plateau_gros'].includes(mode)
-  const needsDimensions = mode === 'decoupe'
-  const plateauxFiltres = selectedArticle
-    ? plateaux.filter((p) => p.articleId === selectedArticle.id)
-    : plateaux
+  const [sheetId, setSheetId] = useState('')
+  const [nombre, setNombre] = useState('1')
+  const [length, setLength] = useState('')
+  const [height, setHeight] = useState('')
+  const [customPrice, setCustomPrice] = useState('')
+  const item = articles.find(a => String(a.id) === articleId)
+  const modes = item ? modesForArticle(item.type, item.vitreDetail?.prixPlateauGros != null) : []
+  const needsPlateau = item?.type === 'vitre'
+  const whole = mode === 'plateau_entier' || mode === 'plateau_gros'
+  const sheets = plateaux.filter(p => p.articleId === item?.id && (!whole || Number(p.surfaceRestanteM2) === Number((Number(p.longueurOrigineM) * Number(p.hauteurOrigineM)).toFixed(2))))
+  const sheet = sheets.find(p => String(p.id) === sheetId)
+  const price = item?.type === 'vitre'
+    ? mode === 'decoupe' ? item.prixVente : mode === 'plateau_gros' ? item.vitreDetail?.prixPlateauGros : item.vitreDetail?.prixPlateauEntier
+    : item?.type === 'alu' ? mode === 'pack' ? item.aluDetail?.prixPack : item.prixVente : customPrice
+  const validCount = Number.isInteger(Number(nombre)) && Number(nombre) > 0 && Number(nombre) <= 2147483647
+  const validDimensions = Number(length) > 0 && Number(length) <= 999.999 && Number(height) > 0 && Number(height) <= 999.999
+  const quantity = !validCount ? 0 : mode === 'decoupe'
+    ? validDimensions ? cutQuantity(Number(length), Number(height), Number(nombre)) : 0
+    : Number(nombre)
+  let preview: ReturnType<typeof lineAmounts> | null = null
+  try { if (price) preview = lineAmounts(quantity, price) } catch { /* Incomplete input is not a billable line. */ }
+  const selectedItems = articles.filter(a => String(a.id) === articleId || `${a.code} ${a.designation} ${a.couleur ?? ''}`.toLocaleLowerCase('fr').includes(search.toLocaleLowerCase('fr')))
+  const [state, action, pending] = useActionState(async (prev: LigneFormState, data: FormData) => {
+    const result = await addLigne(prev, data)
+    if (result.success) {
+      setNombre('1')
+      setLength('')
+      setHeight('')
+      setSheetId('')
+    }
+    return result
+  }, {} as LigneFormState)
+  const selectClass = 'h-10 w-full min-w-0 rounded-lg border border-input bg-card px-3 text-sm'
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-3">
       <input type="hidden" name="venteId" value={venteId} />
       <input type="hidden" name="mode" value={mode} />
-
-      {/* Mode */}
-      <div className="flex flex-col gap-2">
-        <label className="text-xs text-muted-foreground uppercase tracking-wider">Mode de vente</label>
-        <div className="flex flex-wrap gap-2">
-          {MODES.map((m) => (
-            <button key={m} type="button" onClick={() => setMode(m)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
-                mode === m
-                  ? 'bg-[#c8a96e]/15 text-[#c8a96e] border-[#c8a96e]/30'
-                  : 'text-muted-foreground border-white/10 hover:border-white/20'
-              )}>
-              {MODE_LABELS[m]}
-            </button>
-          ))}
-        </div>
+      <div className="grid gap-1.5">
+        <label htmlFor="sale-search" className="text-xs font-medium text-muted-foreground">Rechercher un article</label>
+        <Input id="sale-search" type="search" placeholder="Code, désignation, couleur…" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Article */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground">Article *</label>
-          <select name="articleId" required
-            onChange={(e) => setSelectedArticle(articles.find((a) => a.id === Number(e.target.value)) ?? null)}
-            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-            <option value="" className="bg-[#111]">— Choisir —</option>
-            {articles.map((a) => (
-              <option key={a.id} value={a.id} className="bg-[#111]">{a.code} · {a.designation}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Plateau si nécessaire */}
-        {needsPlateau && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Plateau *</label>
-            <select name="plateauId" required
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-              <option value="" className="bg-[#111]">— Choisir —</option>
-              {plateauxFiltres.map((p) => (
-                <option key={p.id} value={p.id} className="bg-[#111]">
-                  {p.articleDesignation} · {p.longueurOrigineM}×{p.hauteurOrigineM}m · {p.surfaceRestanteM2}m² restant
-                  {p.emplacement ? ` · ${p.emplacement}` : ''}
-                </option>
-              ))}
+      <div className="grid gap-1.5">
+        <label htmlFor="sale-article" className="text-xs font-medium text-muted-foreground">Article *</label>
+        <select id="sale-article" name="articleId" value={articleId} required className={selectClass} onChange={e => {
+          const next = articles.find(a => String(a.id) === e.target.value)
+          setArticleId(e.target.value)
+          setMode(next ? modesForArticle(next.type, next.vitreDetail?.prixPlateauGros != null)[0] : 'standard')
+          setCustomPrice(next?.prixVente ?? '')
+          setSheetId('')
+          setNombre('1')
+        }}>
+          <option value="">Choisir un article</option>
+          {selectedItems.map(a => <option key={a.id} value={a.id}>{a.code} · {a.designation}{a.couleur ? ` · ${a.couleur}` : ''}</option>)}
+        </select>
+        {selectedItems.length === 0 && <p className="text-xs text-muted-foreground">Aucun article correspondant.</p>}
+      </div>
+      {item && <>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-1.5">
+            <label htmlFor="sale-mode" className="text-xs font-medium text-muted-foreground">Mode de vente</label>
+            <select id="sale-mode" value={mode} className={selectClass} onChange={e => { setMode(e.target.value as ModeLigne); setSheetId(''); setNombre('1') }}>
+              {modes.map(m => <option key={m} value={m}>{MODE_LABELS[m]}</option>)}
             </select>
           </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground">Nombre *</label>
-          <Input name="nombre" type="number" min="1" defaultValue="1" required />
+          <div className="grid gap-1.5">
+            <label htmlFor="sale-count" className="text-xs font-medium text-muted-foreground">{mode === 'pack' ? 'Nombre de packs' : 'Nombre'} *</label>
+            <Input id="sale-count" name="nombre" type="number" min="1" max={whole ? '1' : '2147483647'} step="1" value={whole ? '1' : nombre} readOnly={whole} onChange={e => setNombre(e.target.value)} required />
+          </div>
         </div>
-
-        {needsDimensions && (
-          <>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Longueur (m) *</label>
-              <Input name="longueurM" type="number" step="0.001" min="0.001" placeholder="1.200" required />
+        {needsPlateau && <div className="grid gap-1.5">
+          <label htmlFor="sale-sheet" className="text-xs font-medium text-muted-foreground">Plateau disponible *</label>
+          <select id="sale-sheet" name="plateauId" value={sheet ? sheetId : ''} required className={selectClass} onChange={e => setSheetId(e.target.value)}>
+            <option value="">Choisir un plateau</option>
+            {sheets.map(p => <option key={p.id} value={p.id}>#{p.id} · {p.longueurOrigineM} × {p.hauteurOrigineM} m · {p.surfaceRestanteM2} m²{p.emplacement ? ` · ${p.emplacement}` : ''}</option>)}
+          </select>
+          {sheets.length === 0 && <p role="status" className="text-xs text-destructive">Aucun plateau disponible pour ce mode.</p>}
+        </div>}
+        {mode === 'decoupe' && <>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <label htmlFor="sale-length" className="text-xs font-medium text-muted-foreground">Longueur (m) *</label>
+              <Input id="sale-length" name="longueurM" type="number" step="0.001" min="0.001" max="999.999" value={length} onChange={e => setLength(e.target.value)} required />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Hauteur (m) *</label>
-              <Input name="hauteurM" type="number" step="0.001" min="0.001" placeholder="0.800" required />
+            <div className="grid gap-1.5">
+              <label htmlFor="sale-height" className="text-xs font-medium text-muted-foreground">Hauteur (m) *</label>
+              <Input id="sale-height" name="hauteurM" type="number" step="0.001" min="0.001" max="999.999" value={height} onChange={e => setHeight(e.target.value)} required />
             </div>
-          </>
-        )}
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground">Prix appliqué (Ar) *</label>
-          <Input name="prixApplique" type="number" step="0.01" min="0" required
-            defaultValue={selectedArticle?.prixVente ?? ''} placeholder="0.00" />
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">Surface arrondie à 0,01 m². La disposition réelle des découpes doit être vérifiée au dépôt.</p>
+        </>}
+        {item.type === 'alu' && <p className="text-xs text-muted-foreground">Stock : {item.aluDetail?.stockBarres ?? 0} barres{mode === 'pack' ? ` · ${item.aluDetail?.nombreParPack ?? 0} barres par pack` : ''}.</p>}
+        <div className="grid gap-1.5">
+          <label htmlFor="sale-price" className="text-xs font-medium text-muted-foreground">Prix {mode === 'decoupe' ? 'au m²' : mode === 'pack' ? 'par pack' : 'unitaire'} (Ar){item.type === 'vitre' || item.type === 'alu' ? ' · tarif catalogue' : ''}</label>
+          <Input id="sale-price" name="prixApplique" type="number" step="0.01" min="0" value={price ?? ''} readOnly={item.type === 'vitre' || item.type === 'alu'} onChange={e => setCustomPrice(e.target.value)} required />
         </div>
+      </>}
+      <div className="sticky bottom-0 z-10 mt-1 grid gap-3 border-t border-border bg-card pt-3">
+        <div className="flex items-center justify-between gap-3 text-sm" aria-live="polite">
+          <span className="text-muted-foreground">{preview ? `${preview.quantiteFacturee} ${mode === 'decoupe' ? 'm²' : mode === 'pack' ? 'pack(s)' : 'unité(s)'}` : 'Montant de la ligne'}</span>
+          <strong className="text-primary">{preview ? `${Number(preview.montant).toLocaleString('fr-FR')} Ar` : '—'}</strong>
+        </div>
+        {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
+        {state.success && <p role="status" className="text-xs text-emerald-700">Ligne ajoutée au bon.</p>}
+        <Button type="submit" disabled={pending || !item || !preview || (needsPlateau && !sheet)} className="w-full">{pending ? 'Ajout…' : 'Ajouter au bon'}</Button>
+        <p className="text-[11px] text-muted-foreground">Le stock est déduit dès l’ajout au brouillon et restitué en cas d’annulation.</p>
       </div>
-
-      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-      {state.success && <p className="text-sm text-emerald-400">✓ Ligne ajoutée.</p>}
-
-      <Button type="submit" disabled={pending} size="sm" className="self-end">
-        {pending ? 'Ajout…' : '+ Ajouter la ligne'}
-      </Button>
     </form>
   )
 }

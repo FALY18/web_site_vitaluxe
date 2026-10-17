@@ -21,8 +21,8 @@ export default async function ParametresPage() {
         <p className="text-muted-foreground">Ces paramètres sont consultables en lecture seule. Pour les modifier, contactez la personne responsable de la configuration.</p>
       </div>
       <div className="grid items-start gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <section aria-labelledby="company-title" className="overflow-hidden rounded-2xl border border-white/10 bg-card">
-          <div className="flex items-center gap-3 border-b border-white/8 p-5 sm:p-6">
+        <section aria-labelledby="company-title" className="overflow-hidden rounded-2xl border border-foreground/10 bg-card">
+          <div className="flex items-center gap-3 border-b border-foreground/8 p-5 sm:p-6">
             <Building2 aria-hidden="true" className="size-5 shrink-0 text-primary" />
             <div>
               <h2 id="company-title" className="text-base font-semibold">Informations de la société</h2>
@@ -30,7 +30,7 @@ export default async function ParametresPage() {
             </div>
           </div>
           {!params && <p role="status" className="px-6 pt-5 text-sm text-amber-300">Aucune configuration de société enregistrée.</p>}
-          <dl className="divide-y divide-white/8 px-5 sm:px-6">
+          <dl className="divide-y divide-foreground/8 px-5 sm:px-6">
             {fields.map(([label, value]) => (
               <div key={label} className="grid gap-2 py-5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-5">
                 <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -40,7 +40,7 @@ export default async function ParametresPage() {
           </dl>
         </section>
         <div className="grid gap-6">
-          <section aria-labelledby="measure-title" className="rounded-2xl border border-white/10 bg-card p-5 sm:p-6">
+          <section aria-labelledby="measure-title" className="rounded-2xl border border-foreground/10 bg-card p-5 sm:p-6">
             <div className="mb-4 flex items-center gap-3">
               <Ruler aria-hidden="true" className="size-5 text-primary" />
               <h2 id="measure-title" className="text-base font-semibold">Tolérance de mesure</h2>
@@ -50,7 +50,7 @@ export default async function ParametresPage() {
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Marge de tolérance configurée pour les mesures, exprimée en mètres.</p>
           </section>
-          <section aria-labelledby="numbering-title" className="rounded-2xl border border-white/10 bg-card p-5 sm:p-6">
+          <section aria-labelledby="numbering-title" className="rounded-2xl border border-foreground/10 bg-card p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <Hash aria-hidden="true" className="size-5 text-primary" />
               <h2 id="numbering-title" className="text-base font-semibold">Numérotation automatique</h2>
@@ -65,7 +65,7 @@ export default async function ParametresPage() {
                   <dt className="font-medium">{label}</dt>
                   <dd className="mt-1 space-y-2">
                     <p className="text-muted-foreground leading-relaxed">{description}</p>
-                    <span className="inline-block rounded-md border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-primary">{example}</span>
+                    <span className="inline-block rounded-md border border-foreground/10 bg-foreground/5 px-2.5 py-1 font-mono text-xs text-primary">{example}</span>
                   </dd>
                 </div>
               ))}

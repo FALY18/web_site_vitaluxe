@@ -4,9 +4,9 @@ export function AluFields() {
   return (
     <div className="flex flex-col gap-4 p-4 rounded-lg bg-orange-500/5 border border-orange-500/15">
       <div>
-        <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Détails aluminium</p>
+        <p className="text-xs font-semibold text-orange-700 uppercase tracking-wider">Détails aluminium</p>
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          Le prix à la barre est saisi dans le champ "Prix de vente" ci-dessus.
+          Le prix à la barre est saisi dans le champ « Prix de vente » ci-dessus.
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

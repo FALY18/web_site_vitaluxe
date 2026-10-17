@@ -1,95 +1,63 @@
-import { getSession } from '@/features/auth/session'
+﻿import { getSession } from '@/features/auth/session'
 import { getVenteById, getPlateauxDisponibles } from '@/features/sell/queries/vente'
 import { getArticles } from '@/features/article/queries/article'
 import { getProformaInvoiceData, getFactureByVenteId } from '@/features/invoice/queries/invoice'
-import { createProformaInvoice } from '@/features/invoice/action/invoice'
+import { createProformaInvoice, createFinalInvoice } from '@/features/invoice/action/invoice'
 import { VenteDetailView } from '@/features/sell/components/vente-detail'
 import { VenteOptionsForm } from '@/features/sell/components/vente-options-form'
+import { VenteWorkspace } from '@/features/sell/components/vente-workspace'
+import { SaleActionForm } from '@/features/sell/components/sale-action-form'
 import { ProformaInvoice } from '@/features/invoice/components/proforma-invoice'
 import { InvoicePrintButton } from '@/features/invoice/components/invoice-print-button'
-import { createFinalInvoice } from '@/features/invoice/action/invoice'
 import { LigneForm } from '@/features/sell/components/ligne-form'
 import { PageHeader } from '@/features/dashboard/components/page-header'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
 export default async function VenteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
   if (!session) redirect('/login')
-
+  if (!['admin', 'commercial'].includes(session.role)) redirect('/dashboard')
   const { id } = await params
-  const [venteData, articles, plateaux, invoiceData, factureData] = await Promise.all([
-    getVenteById(Number(id)),
-    getArticles(),
-    getPlateauxDisponibles(),
-    getProformaInvoiceData(Number(id)),
-    getFactureByVenteId(Number(id)),
-  ])
-
+  if (!/^\d+$/.test(id) || !Number.isSafeInteger(Number(id)) || Number(id) < 1 || Number(id) > 2147483647) notFound()
+  const venteData = await getVenteById(Number(id))
   if (!venteData) notFound()
-
   const isBrouillon = venteData.statut === 'brouillon'
+  const canInvoice = ['confirmee', 'livree'].includes(venteData.statut)
+  const [articles, plateaux, invoiceData, factureData] = await Promise.all([
+    isBrouillon ? getArticles() : Promise.resolve([]),
+    isBrouillon ? getPlateauxDisponibles() : Promise.resolve([]),
+    canInvoice ? getProformaInvoiceData(Number(id)) : Promise.resolve(null),
+    canInvoice ? getFactureByVenteId(Number(id)) : Promise.resolve(null),
+  ])
+  const locked = Boolean(factureData && factureData.statut !== 'brouillon')
+  const invoice = canInvoice ? (
+    <div className="grid gap-5">
+      <VenteOptionsForm vente={venteData} locked={locked} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">Facture</h2>
+        <div className="flex flex-wrap items-start gap-2">
+          {!locked && <>
+            <SaleActionForm action={createProformaInvoice.bind(null, venteData.id)}>
+              <Button type="submit" variant="outline">{factureData ? 'Actualiser la pro forma' : 'Enregistrer la pro forma'}</Button>
+            </SaleActionForm>
+            <SaleActionForm action={createFinalInvoice.bind(null, venteData.id)} confirmMessage="Émettre la facture finale ? Les montants seront verrouillés.">
+              <Button type="submit">Émettre la facture finale</Button>
+            </SaleActionForm>
+          </>}
+          {invoiceData && <InvoicePrintButton />}
+        </div>
+      </div>
+      {factureData && <p role="status" className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">Facture {factureData.numero} · {factureData.statut === 'brouillon' ? 'Pro forma' : 'Émise / verrouillée'}</p>}
+      {invoiceData ? <ProformaInvoice invoice={invoiceData} /> : <p role="status" className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">Renseignez les informations de la société avant de prévisualiser la facture.</p>}
+    </div>
+  ) : undefined
 
   return (
-    <div className="p-6 flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <Link href="/dashboard/ventes">
-          <Button variant="ghost" size="icon-sm"><ArrowLeft className="size-4" /></Button>
-        </Link>
-        <PageHeader
-          title={`Bon de vente #${venteData.numero}`}
-          description={`${venteData.clientNom} · ${new Date(venteData.date).toLocaleDateString('fr-FR')}`}
-        />
-      </div>
-
-      <VenteDetailView vente={venteData} />
-
-      {invoiceData && ['confirmee', 'livree'].includes(venteData.statut) && (
-        <div className="flex flex-col gap-4">
-          <VenteOptionsForm
-            vente={venteData}
-            locked={Boolean(factureData && factureData.statut !== 'brouillon')}
-          />
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Aperçu facture pro forma</h2>
-            <div className="flex items-center gap-2">
-              <form action={createProformaInvoice.bind(null, venteData.id)}>
-                <Button type="submit" size="sm" variant={factureData ? 'secondary' : 'default'}>
-                  {factureData ? 'Rafraîchir' : 'Générer'}
-                </Button>
-              </form>
-              <form action={createFinalInvoice.bind(null, venteData.id)}>
-                <Button type="submit" size="sm" variant={factureData?.statut === 'emise' ? 'secondary' : 'outline'}>
-                  {factureData?.statut === 'emise' ? 'Facture finale' : 'Créer facture finale'}
-                </Button>
-              </form>
-              <InvoicePrintButton />
-            </div>
-          </div>
-          {factureData && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700">
-              {factureData.statut === 'emise'
-                ? <>Facture finale enregistrée : <span className="font-semibold">{factureData.numero || 'N° en cours'}</span></>
-                : <>Facture enregistrée : <span className="font-semibold">{factureData.numero || 'N° en cours'}</span></>}
-            </div>
-          )}
-          <ProformaInvoice invoice={invoiceData} />
-        </div>
-      )}
-
-      {isBrouillon && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Ajouter une ligne</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LigneForm venteId={venteData.id} articles={articles} plateaux={plateaux} />
-          </CardContent>
-        </Card>
-      )}
+    <div className="p-4 sm:p-6">
+      <PageHeader title={`Bon de vente #${venteData.numero}`} description={`${venteData.clientNom} · ${new Date(venteData.date).toLocaleDateString('fr-FR')}`} action={<Link href="/ventes" className="inline-flex min-h-10 items-center rounded-lg border border-border bg-card px-4 text-sm">Retour aux ventes</Link>} />
+      <VenteWorkspace count={venteData.lignes.length} entry={isBrouillon ? <LigneForm venteId={venteData.id} articles={articles} plateaux={plateaux} /> : undefined} detail={<VenteDetailView vente={venteData} />} invoice={invoice} />
     </div>
   )
 }

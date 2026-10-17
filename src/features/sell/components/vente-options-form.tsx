@@ -5,6 +5,7 @@ import { updateVenteOptions } from '../action/vente'
 import type { VenteDetail, VenteOptionsFormState } from '../types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { calculateInvoiceTotals } from '@/features/invoice/models/invoice'
 
 const initial: VenteOptionsFormState = {}
 
@@ -18,11 +19,10 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
   const [livraison, setLivraison] = useState(vente.fraisLivraison)
   const base = Number(vente.total) || 0
   const preview = useMemo(() => {
-    const discountInput = Number(valeur) || 0
-    const discount = mode === 'pourcentage' ? base * discountInput / 100 : discountInput
+    const totals = calculateInvoiceTotals(base, mode, Math.max(0, Number(valeur) || 0), Math.max(0, Number(livraison) || 0))
     return {
-      remise: Math.min(base, discount),
-      net: Math.max(0, base - discount) + (Number(livraison) || 0),
+      remise: totals.montantRemise,
+      net: totals.totalTtc,
     }
   }, [base, livraison, mode, valeur])
 
@@ -39,7 +39,7 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
     <form action={action} className="rounded-xl bg-card ring-1 ring-foreground/10 p-4 sm:p-5 flex flex-col gap-4">
       <div>
         <h3 className="text-sm font-semibold">Étape 1 · Conditions de facturation</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Le caissier renseigne ici la remise et la livraison avant de générer la facture. La remise est déduite des articles. Aucune TVA n’est calculée.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Enregistrez la remise et la livraison avant de générer la facture. Les actions de facturation utilisent les dernières conditions enregistrées. Aucune TVA n’est calculée.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -53,8 +53,8 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
             onChange={(event) => setMode(event.target.value as typeof mode)}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <option value="pourcentage" className="bg-[#111]">Pourcentage</option>
-            <option value="montant" className="bg-[#111]">Montant fixe</option>
+            <option value="pourcentage" className="bg-card">Pourcentage</option>
+            <option value="montant" className="bg-card">Montant fixe</option>
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -66,7 +66,7 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
             name="valeurRemise"
             type="number"
             min="0"
-            max={mode === 'pourcentage' ? '100' : undefined}
+            max={mode === 'pourcentage' ? '100' : base}
             step="0.01"
             value={valeur}
             disabled={locked}
@@ -90,14 +90,14 @@ export function VenteOptionsForm({ vente, locked = false }: { vente: VenteDetail
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white/3 px-3 py-2.5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-foreground/3 px-3 py-2.5 text-xs">
         <span className="text-muted-foreground">Remise calculée : <strong className="text-foreground">{formatAr(preview.remise)}</strong></span>
-        <span className="text-muted-foreground">Net à payer : <strong className="text-base text-[#c8a96e]">{formatAr(preview.net)}</strong></span>
+        <span className="text-muted-foreground">Net à payer : <strong className="text-base text-primary">{formatAr(preview.net)}</strong></span>
       </div>
 
       {locked && <p className="text-xs text-amber-500">Facture émise : les montants sont verrouillés.</p>}
       {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
-      {state.success && <p role="status" className="text-sm text-emerald-400">Options enregistrées.</p>}
+      {state.success && <p role="status" className="text-sm text-emerald-700">Options enregistrées.</p>}
       {!locked && <Button type="submit" size="sm" disabled={pending} className="self-end">
         {pending ? 'Enregistrement…' : 'Enregistrer remise et livraison'}
       </Button>}

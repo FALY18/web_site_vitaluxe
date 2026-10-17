@@ -2,9 +2,9 @@ import { DeleteUtilisateurButton } from './delete-utilisateur-button'
 import type { UtilisateurRow } from '../types'
 
 const roleBadge: Record<string, string> = {
-  admin: 'bg-[#c8a96e]/15 text-[#c8a96e] border-[#c8a96e]/30',
-  commercial: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  depot: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  admin: 'bg-[#c8a96e]/15 text-primary border-[#c8a96e]/30',
+  commercial: 'bg-blue-500/10 text-blue-700 border-blue-500/20',
+  depot: 'bg-purple-500/10 text-purple-700 border-purple-500/20',
 }
 
 const roleLabel: Record<string, string> = {
@@ -18,7 +18,7 @@ export function UtilisateurTable({ users, currentUserId }: { users: UtilisateurR
     <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="border-b border-white/8">
+          <tr className="border-b border-foreground/8">
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Nom</th>
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Identifiant</th>
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Rôle</th>
@@ -27,7 +27,7 @@ export function UtilisateurTable({ users, currentUserId }: { users: UtilisateurR
         </thead>
         <tbody>
           {users.map((u) => (
-            <tr key={u.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+            <tr key={u.id} className="border-b border-foreground/5 last:border-0 hover:bg-foreground/3 transition-colors">
               <td className="px-4 py-3 font-medium">{u.nom}</td>
               <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{u.identifiant}</td>
               <td className="px-4 py-3">

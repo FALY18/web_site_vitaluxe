@@ -29,7 +29,7 @@ export async function createPlateau(_prev: PlateauFormState, formData: FormData)
       emplacement,
       statut: 'disponible',
     })
-    revalidatePath('/dashboard/plateaux')
+    revalidatePath('/plateaux')
     return { success: true }
   } catch {
     return { error: 'Erreur lors de la création.' }
@@ -40,14 +40,14 @@ export async function updatePlateauEmplacement(id: number, emplacement: string):
   const session = await getSession()
   if (!session || session.role === 'commercial') return
   await db.update(plateau).set({ emplacement: emplacement || null }).where(eq(plateau.id, id))
-  revalidatePath('/dashboard/plateaux')
+  revalidatePath('/plateaux')
 }
 
 export async function updateStatutPlateau(id: number, statut: StatutPlateau): Promise<void> {
   const session = await getSession()
   if (!session || session.role === 'commercial') return
   await db.update(plateau).set({ statut }).where(eq(plateau.id, id))
-  revalidatePath('/dashboard/plateaux')
+  revalidatePath('/plateaux')
 }
 
 export async function deletePlateau(id: number): Promise<void> {
@@ -55,6 +55,6 @@ export async function deletePlateau(id: number): Promise<void> {
   if (!session || session.role === 'commercial') return
   try {
     await db.delete(plateau).where(eq(plateau.id, id))
-    revalidatePath('/dashboard/plateaux')
+    revalidatePath('/plateaux')
   } catch { /* FK ligne_vente */ }
 }

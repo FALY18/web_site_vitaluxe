@@ -3,14 +3,14 @@ import type { StatCardData } from '../types'
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 const trendIcon = {
-  up: <TrendingUp className="size-3.5 text-emerald-400" />,
-  down: <TrendingDown className="size-3.5 text-red-400" />,
+  up: <TrendingUp className="size-3.5 text-emerald-700" />,
+  down: <TrendingDown className="size-3.5 text-red-700" />,
   neutral: <Minus className="size-3.5 text-muted-foreground" />,
 }
 
 const trendColor = {
-  up: 'text-emerald-400',
-  down: 'text-red-400',
+  up: 'text-emerald-700',
+  down: 'text-red-700',
   neutral: 'text-muted-foreground',
 }
 

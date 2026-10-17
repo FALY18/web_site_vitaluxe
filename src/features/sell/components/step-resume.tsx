@@ -1,3 +1,4 @@
+import { SaleActionForm } from './sale-action-form'
 import { updateStatutVente } from '../action/vente'
 import { Button } from '@/components/ui/button'
 import { StatutBadge } from './vente-statut-badge'
@@ -16,8 +17,8 @@ export function StepResume({ vente }: { vente: VenteDetail }) {
       <div className="rounded-xl bg-[#c8a96e]/5 border border-[#c8a96e]/20 p-5 flex items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <FileText className="size-4 text-[#c8a96e]" />
-            <span className="text-xs font-semibold text-[#c8a96e] uppercase tracking-wider">Bon de vente</span>
+            <FileText className="size-4 text-primary" />
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Bon de vente</span>
             <StatutBadge statut={vente.statut} />
           </div>
           <p className="text-sm"><span className="text-muted-foreground">Client : </span><span className="font-semibold">{vente.clientNom}</span></p>
@@ -29,19 +30,19 @@ export function StepResume({ vente }: { vente: VenteDetail }) {
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total</p>
-          <p className="text-3xl font-heading font-bold text-[#c8a96e]">{formatAr(total.toFixed(2))}</p>
+          <p className="text-3xl font-heading font-bold text-primary">{formatAr(total.toFixed(2))}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{vente.lignes.length} ligne{vente.lignes.length > 1 ? 's' : ''}</p>
         </div>
       </div>
 
       {/* Lignes */}
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
-        <div className="px-4 py-3 border-b border-white/8">
+        <div className="px-4 py-3 border-b border-foreground/8">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Détail des articles</p>
         </div>
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-white/5">
+            <tr className="border-b border-foreground/5">
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Article</th>
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Mode</th>
               <th className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">Qté / Dim.</th>
@@ -51,7 +52,7 @@ export function StepResume({ vente }: { vente: VenteDetail }) {
           </thead>
           <tbody>
             {vente.lignes.map((l) => (
-              <tr key={l.id} className="border-b border-white/5 last:border-0">
+              <tr key={l.id} className="border-b border-foreground/5 last:border-0">
                 <td className="px-4 py-3">
                   <p className="font-medium text-xs">{l.articleDesignation}</p>
                   <p className="text-[10px] text-muted-foreground font-mono">{l.articleCode}</p>
@@ -63,14 +64,14 @@ export function StepResume({ vente }: { vente: VenteDetail }) {
                     : `${l.nombre}×`}
                 </td>
                 <td className="px-4 py-3 text-right text-xs">{formatAr(l.prixApplique)}</td>
-                <td className="px-4 py-3 text-right font-semibold text-[#c8a96e]">{formatAr(l.montant)}</td>
+                <td className="px-4 py-3 text-right font-semibold text-primary">{formatAr(l.montant)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-white/15 bg-white/3">
+            <tr className="border-t border-foreground/15 bg-foreground/3">
               <td colSpan={4} className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total</td>
-              <td className="px-4 py-3 text-right text-base font-bold text-[#c8a96e]">{formatAr(total.toFixed(2))}</td>
+              <td className="px-4 py-3 text-right text-base font-bold text-primary">{formatAr(total.toFixed(2))}</td>
             </tr>
           </tfoot>
         </table>
@@ -83,11 +84,11 @@ export function StepResume({ vente }: { vente: VenteDetail }) {
             <p className="text-sm font-medium">Confirmer la vente</p>
             <p className="text-xs text-muted-foreground mt-0.5">La vente sera validée et ne pourra plus être modifiée.</p>
           </div>
-          <form action={updateStatutVente.bind(null, vente.id, 'confirmee')}>
+          <SaleActionForm action={updateStatutVente.bind(null, vente.id, 'confirmee')}>
             <Button type="submit">
               <Check className="size-4" />Confirmer
             </Button>
-          </form>
+          </SaleActionForm>
         </div>
       )}
     </div>

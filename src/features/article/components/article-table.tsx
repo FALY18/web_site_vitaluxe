@@ -22,7 +22,7 @@ export function ArticleTable({ articles, role }: { articles: ArticleWithDetail[]
     <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="border-b border-white/8">
+          <tr className="border-b border-foreground/8">
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Code</th>
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Désignation</th>
             <th className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">Type</th>
@@ -35,7 +35,7 @@ export function ArticleTable({ articles, role }: { articles: ArticleWithDetail[]
         </thead>
         <tbody>
           {articles.map((a) => (
-            <tr key={a.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+            <tr key={a.id} className="border-b border-foreground/5 last:border-0 hover:bg-foreground/3 transition-colors">
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{a.code}</td>
               <td className="px-4 py-3 font-medium max-w-[200px] truncate">
                 {a.designation}
@@ -45,7 +45,7 @@ export function ArticleTable({ articles, role }: { articles: ArticleWithDetail[]
               <td className="px-4 py-3 text-xs text-muted-foreground">{a.categorieNom}</td>
               <td className="px-4 py-3"><UniteBadge unite={a.uniteVente} /></td>
               <td className="px-4 py-3 text-right">
-                <span className="font-medium text-[#c8a96e]">{formatAr(a.prixVente)}</span>
+                <span className="font-medium text-primary">{formatAr(a.prixVente)}</span>
                 <span className="block text-[10px] text-muted-foreground">
                   {a.type === 'vitre' ? '/m²' : a.type === 'alu' ? '/barre' : '/unité'}
                 </span>

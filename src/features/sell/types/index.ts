@@ -73,8 +73,8 @@ export const MODE_LABELS: Record<ModeLigne, string> = {
 }
 
 export const STATUT_STYLE: Record<StatutVente, string> = {
-  brouillon:  'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  confirmee:  'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  livree:     'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  annulee:    'bg-red-500/10 text-red-400 border-red-500/20',
+  brouillon:  'bg-yellow-500/10 text-yellow-700 border-yellow-500/20',
+  confirmee:  'bg-blue-500/10 text-blue-700 border-blue-500/20',
+  livree:     'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  annulee:    'bg-red-500/10 text-red-700 border-red-500/20',
 }

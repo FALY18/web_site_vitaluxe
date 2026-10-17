@@ -39,14 +39,14 @@ export function ArticleList({ articles, role }: { articles: ArticleWithDetail[],
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
               filter === value
-                ? 'bg-[#c8a96e]/15 text-[#c8a96e] border-[#c8a96e]/30'
-                : 'text-muted-foreground border-white/10 hover:border-white/20 hover:text-foreground'
+                ? 'bg-[#c8a96e]/15 text-primary border-[#c8a96e]/30'
+                : 'text-muted-foreground border-foreground/10 hover:border-foreground/20 hover:text-foreground'
             )}
           >
             {label}
             <span className={cn(
               'px-1.5 py-0.5 rounded text-[10px] font-semibold',
-              filter === value ? 'bg-[#c8a96e]/20' : 'bg-white/8'
+              filter === value ? 'bg-[#c8a96e]/20' : 'bg-foreground/8'
             )}>
               {counts[value]}
             </span>

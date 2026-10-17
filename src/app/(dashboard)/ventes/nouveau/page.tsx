@@ -6,15 +6,18 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { getClients } from '@/features/sell/queries/vente'
 
 export default async function NouvelleVentePage() {
   const session = await getSession()
   if (!session) redirect('/login')
+  if (!['admin', 'commercial'].includes(session.role)) redirect('/dashboard')
+  const clients = await getClients()
 
   return (
     <div className="p-6 flex flex-col gap-6 max-w-2xl">
       <div className="flex items-center gap-3">
-        <Link href="/dashboard/ventes">
+        <Link href="/ventes">
           <Button variant="ghost" size="icon-sm"><ArrowLeft className="size-4" /></Button>
         </Link>
         <PageHeader title="Nouvelle vente" description="Étape 1 — Informations client" />
@@ -24,11 +27,11 @@ export default async function NouvelleVentePage() {
         <CardHeader>
           <CardTitle className="text-sm">Client</CardTitle>
           <CardDescription>
-            Si le client existe déjà, il sera retrouvé automatiquement par son nom.
+            Sélectionnez un client existant ou créez une fiche distincte.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <NouvelleVenteForm />
+          <NouvelleVenteForm clients={clients} />
         </CardContent>
       </Card>
     </div>

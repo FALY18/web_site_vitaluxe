@@ -15,8 +15,8 @@ export type PlateauRow = {
 export type PlateauFormState = { error?: string; success?: boolean }
 
 export const STATUT_PLATEAU_STYLE: Record<StatutPlateau, string> = {
-  disponible:   'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  epuise:       'bg-red-500/10 text-red-400 border-red-500/20',
+  disponible:   'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  epuise:       'bg-red-500/10 text-red-700 border-red-500/20',
   vendu_entier: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
 }
 

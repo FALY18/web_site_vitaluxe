@@ -47,7 +47,7 @@ export function CreateUtilisateurForm({ onSuccess }: { onSuccess?: () => void })
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             {roles.map((r) => (
-              <option key={r.value} value={r.value} className="bg-[#111]">{r.label}</option>
+              <option key={r.value} value={r.value} className="bg-card">{r.label}</option>
             ))}
           </select>
         </div>

@@ -1,3 +1,4 @@
+import { SaleActionForm } from './sale-action-form'
 import Link from 'next/link'
 import { StatutBadge } from './vente-statut-badge'
 import { deleteVente } from '../action/vente'
@@ -23,7 +24,7 @@ export function VenteTable({ ventes }: { ventes: VenteRow[] }) {
     <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
-          <tr className="border-b border-white/8">
+          <tr className="border-b border-foreground/8">
             {['N° Bon', 'Date', 'Client', 'Commercial', 'Net à payer', 'Statut', ''].map((h) => (
               <th key={h} className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">{h}</th>
             ))}
@@ -33,8 +34,8 @@ export function VenteTable({ ventes }: { ventes: VenteRow[] }) {
           {ventes.map((v) => {
             const totals = calculateInvoiceTotals(v.total, v.modeRemise, v.valeurRemise, v.fraisLivraison)
             return (
-            <tr key={v.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
-              <td className="px-4 py-3 font-mono font-semibold text-[#c8a96e]">#{v.numero}</td>
+            <tr key={v.id} className="border-b border-foreground/5 last:border-0 hover:bg-foreground/3 transition-colors">
+              <td className="px-4 py-3 font-mono font-semibold text-primary">#{v.numero}</td>
               <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(v.date).toLocaleDateString('fr-FR')}</td>
               <td className="px-4 py-3 font-medium">{v.clientNom}</td>
               <td className="px-4 py-3 text-muted-foreground text-xs">{v.commercialNom}</td>
@@ -42,17 +43,17 @@ export function VenteTable({ ventes }: { ventes: VenteRow[] }) {
               <td className="px-4 py-3"><StatutBadge statut={v.statut} /></td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1">
-                  <Link href={`/dashboard/ventes/${v.id}`}>
-                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
+                  <Link href={`/ventes/${v.id}`}>
+                    <Button aria-label="Ouvrir le bon de vente" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground">
                       <Eye className="size-3.5" />
                     </Button>
                   </Link>
                   {v.statut === 'brouillon' && (
-                    <form action={deleteVente.bind(null, v.id)}>
-                      <Button variant="ghost" size="icon-sm" type="submit" className="text-muted-foreground hover:text-destructive">
+                    <SaleActionForm action={deleteVente.bind(null, v.id)} confirmMessage="Annuler cette vente et restituer son stock ?">
+                      <Button aria-label="Annuler ce brouillon et restituer le stock" variant="ghost" size="icon-sm" type="submit" className="text-muted-foreground hover:text-destructive">
                         <Trash2 className="size-3.5" />
                       </Button>
-                    </form>
+                    </SaleActionForm>
                   )}
                 </div>
               </td>

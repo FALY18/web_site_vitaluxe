@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation'
 export default async function VentesPage() {
   const session = await getSession()
   if (!session) redirect('/login')
+  if (!['admin', 'commercial'].includes(session.role)) redirect('/dashboard')
 
   const ventes = await getVentes()
 
@@ -19,7 +20,7 @@ export default async function VentesPage() {
         title="Ventes"
         description={`${ventes.length} bon${ventes.length > 1 ? 's' : ''} de vente`}
         action={
-          <Link href="/dashboard/ventes/nouveau">
+          <Link href="/ventes/nouveau">
             <Button size="sm"><Plus className="size-4" />Nouvelle vente</Button>
           </Link>
         }

@@ -1,3 +1,4 @@
+import { SaleActionForm } from './sale-action-form'
 import { deleteLigne, updateStatutVente } from '../action/vente'
 import { StatutBadge } from './vente-statut-badge'
 import { Button } from '@/components/ui/button'
@@ -20,12 +21,12 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
   )
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* En-tête */}
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-5 flex flex-col items-start justify-between gap-4 sm:flex-row">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-4 flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-heading font-bold text-[#c8a96e]">#{vente.numero}</span>
+            <span className="text-2xl font-heading font-bold text-primary">#{vente.numero}</span>
             <StatutBadge statut={vente.statut} />
           </div>
           <p className="text-sm text-muted-foreground">
@@ -42,7 +43,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
           </p>
         </div>
         <div className="min-w-0 break-words sm:text-right">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Net à payer</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{vente.statut === 'annulee' ? 'Montant annulé' : 'Net à payer'}</p>
           <p className="text-xl font-heading font-bold">{formatAr(totals.totalTtc.toFixed(2))}</p>
           {(Number(vente.valeurRemise) > 0 || Number(vente.fraisLivraison) > 0) && (
             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -55,33 +56,33 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
       {/* Actions statut */}
       {isBrouillon && (
         <div className="flex flex-wrap gap-2">
-          <form action={updateStatutVente.bind(null, vente.id, 'confirmee')}>
-            <Button size="sm" type="submit">Confirmer la vente</Button>
-          </form>
-          <form action={updateStatutVente.bind(null, vente.id, 'annulee')}>
+          <SaleActionForm action={updateStatutVente.bind(null, vente.id, 'confirmee')}>
+            <Button size="sm" type="submit" disabled={vente.lignes.length === 0}>Confirmer la vente</Button>
+          </SaleActionForm>
+          <SaleActionForm action={updateStatutVente.bind(null, vente.id, 'annulee')} confirmMessage="Annuler cette vente et restituer son stock ?">
             <Button size="sm" variant="destructive" type="submit">Annuler</Button>
-          </form>
+          </SaleActionForm>
         </div>
       )}
       {vente.statut === 'confirmee' && (
-        <form action={updateStatutVente.bind(null, vente.id, 'livree')}>
+        <SaleActionForm action={updateStatutVente.bind(null, vente.id, 'livree')}>
           <Button size="sm" type="submit">Marquer comme livrée</Button>
-        </form>
+        </SaleActionForm>
       )}
 
       {/* Lignes */}
-      <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
-        <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between">
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10 max-h-[55dvh] overflow-auto">
+        <div className="px-4 py-3 border-b border-foreground/8 flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Lignes ({vente.lignes.length})
           </p>
         </div>
         {vente.lignes.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-muted-foreground">Aucune ligne. Ajoutez des articles ci-dessous.</p>
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">Aucune ligne. Utilisez la saisie des articles pour pr?parer le bon.</p>
         ) : (
           <table className="w-full min-w-[640px] text-sm">
-            <thead>
-              <tr className="border-b border-white/5">
+            <thead className="sticky top-0 z-10 bg-card">
+              <tr className="border-b border-foreground/5">
                 {['Article', 'Mode', 'Qté', 'Dimensions', 'Prix unit.', 'Montant', ''].map((h) => (
                   <th key={h} className="text-left px-4 py-2.5 text-xs text-muted-foreground font-medium">{h}</th>
                 ))}
@@ -89,7 +90,7 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
             </thead>
             <tbody>
               {vente.lignes.map((l) => (
-                <tr key={l.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+                <tr key={l.id} className="border-b border-foreground/5 last:border-0 hover:bg-foreground/3 transition-colors">
                   <td className="px-4 py-3">
                     <p className="font-medium text-xs">{l.articleDesignation}</p>
                     <p className="text-[10px] text-muted-foreground font-mono">{l.articleCode}</p>
@@ -100,14 +101,14 @@ export function VenteDetailView({ vente }: { vente: VenteDetail }) {
                     {l.longueurM && l.hauteurM ? `${l.longueurM}×${l.hauteurM} m` : '—'}
                   </td>
                   <td className="px-4 py-3 text-xs">{formatAr(l.prixApplique)}</td>
-                  <td className="px-4 py-3 font-medium text-[#c8a96e]">{formatAr(l.montant)}</td>
+                  <td className="px-4 py-3 font-medium text-primary">{formatAr(l.montant)}</td>
                   <td className="px-4 py-3">
                     {isBrouillon && (
-                      <form action={deleteLigne.bind(null, l.id, vente.id)}>
-                        <Button variant="ghost" size="icon-sm" type="submit" className="text-muted-foreground hover:text-destructive">
+                      <SaleActionForm action={deleteLigne.bind(null, l.id, vente.id)}>
+                        <Button aria-label="Retirer cette ligne et restituer le stock" variant="ghost" size="icon-sm" type="submit" className="text-muted-foreground hover:text-destructive">
                           <Trash2 className="size-3.5" />
                         </Button>
-                      </form>
+                      </SaleActionForm>
                     )}
                   </td>
                 </tr>

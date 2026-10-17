@@ -43,7 +43,7 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
             {contactConfig.phoneDisplay}
           </a>
           <a href="/login" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="hidden md:inline-flex border-[#c8a96e]/40 text-[#c8a96e] hover:bg-[#c8a96e]/10 hover:border-[#c8a96e]">
+            <Button variant="outline" size="sm" className="hidden md:inline-flex border-[#c8a96e]/40 text-primary hover:bg-[#c8a96e]/10 hover:border-[#c8a96e]">
               Connexion
             </Button>
           </a>
@@ -58,7 +58,7 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
             {itemCount > 0 && <span>{itemCount}</span>}
           </Button>
           <button
-            className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-foreground/70 hover:text-foreground hover:bg-foreground/10 transition-colors"
             aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             onClick={onMenuToggle}
           >
@@ -82,7 +82,7 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
           fixed top-0 right-0 bottom-0 z-[99]
           w-[72vw] max-w-[300px]
           flex flex-col
-          bg-[#12100d] border-l border-[#c8a96e]/30
+          bg-card border-l border-[#c8a96e]/30
           shadow-[−20px_0_60px_rgba(0,0,0,0.7)]
           transition-transform duration-300 ease-in-out
           md:hidden
@@ -91,13 +91,13 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
         aria-label="Menu mobile"
       >
         {/* Header sidebar */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-          <span className="text-[0.7rem] tracking-[0.2em] uppercase text-[#c8a96e] font-semibold">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-foreground/10">
+          <span className="text-[0.7rem] tracking-[0.2em] uppercase text-primary font-semibold">
             Menu
           </span>
           <button
             onClick={onMenuToggle}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-foreground/50 hover:text-foreground hover:bg-foreground/10 transition-colors"
             aria-label="Fermer"
           >
             <X size={18} />
@@ -114,8 +114,8 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
               className="
                 flex items-center gap-3 px-3 py-3.5
                 text-[0.88rem] font-semibold tracking-[0.08em] uppercase
-                text-white/60 rounded-xl
-                hover:text-[#c8a96e] hover:bg-[#c8a96e]/10
+                text-foreground/60 rounded-xl
+                hover:text-primary hover:bg-[#c8a96e]/10
                 transition-all duration-200
                 border border-transparent hover:border-[#c8a96e]/20
               "
@@ -127,19 +127,19 @@ export function SiteHeader({ itemCount, menuOpen, onMenuToggle, onBagOpen }: Sit
         </nav>
 
         {/* Contact rapide */}
-        <div className="mt-auto px-6 py-6 border-t border-white/10">
-          <p className="text-[0.65rem] tracking-[0.15em] uppercase text-white/30 mb-3">
+        <div className="mt-auto px-6 py-6 border-t border-foreground/10">
+          <p className="text-[0.65rem] tracking-[0.15em] uppercase text-foreground/30 mb-3">
             Contact direct
           </p>
           <a
             href={contactConfig.phoneUrl}
-            className="flex items-center gap-2 text-[0.88rem] font-semibold text-[#c8a96e] hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 text-[0.88rem] font-semibold text-primary hover:opacity-80 transition-opacity"
           >
             {contactConfig.phoneDisplay}
           </a>
           <a
             href={contactConfig.whatsappUrl}
-            className="mt-2 flex items-center gap-2 text-[0.78rem] text-white/40 hover:text-white/70 transition-colors"
+            className="mt-2 flex items-center gap-2 text-[0.78rem] text-foreground/40 hover:text-foreground/70 transition-colors"
           >
             WhatsApp · {contactConfig.whatsappDisplay}
           </a>

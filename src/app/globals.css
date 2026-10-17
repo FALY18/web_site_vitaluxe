@@ -16,6 +16,12 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-input: var(--input);
+  --color-destructive: var(--destructive);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -23,26 +29,28 @@
 }
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #f0ede8;
-  --card: #111111;
-  --card-foreground: #f0ede8;
-  --primary: #c8a96e;
-  --primary-foreground: #0a0a0a;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f0ede8;
-  --muted: #1e1e1e;
-  --muted-foreground: #a1a1a1;
-  --accent: #c8a96e;
-  --accent-foreground: #0a0a0a;
-  --border: rgba(255,255,255,0.08);
-  --ring: #c8a96e;
-  --input: #1e1e1e;
+  color-scheme: light;
+  --background: #f6f7f9;
+  --foreground: #202936;
+  --card: #ffffff;
+  --card-foreground: #202936;
+  --primary: #876125;
+  --primary-foreground: #ffffff;
+  --secondary: #edf0f4;
+  --secondary-foreground: #202936;
+  --muted: #edf0f4;
+  --muted-foreground: #596579;
+  --accent: #f3ead9;
+  --accent-foreground: #6e4c18;
+  --border: #d9dfe7;
+  --ring: #876125;
+  --input: #cbd3df;
+  --destructive: #b42318;
   --radius: 0.75rem;
-  --gold: #c8a96e;
-  --gold-light: #e8c98e;
-  --glass: rgba(255,255,255,0.04);
-  --glass-border: rgba(255,255,255,0.1);
+  --gold: #876125;
+  --gold-light: #a67c3b;
+  --glass: rgba(32,41,54,0.03);
+  --glass-border: rgba(32,41,54,0.14);
 }
 
 @layer base {
@@ -211,7 +219,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem 2.5rem;
-  background: rgba(10,10,10,0.85);
+  background: rgba(255,255,255,0.92);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--glass-border);
   transition: background 0.3s;
@@ -356,7 +364,7 @@
 }
 .button-dark {
   background: var(--gold);
-  color: #0a0a0a;
+  color: #ffffff;
   box-shadow: 0 4px 24px rgba(200,169,110,0.3);
 }
 .button-dark:hover {
@@ -371,7 +379,7 @@
   align-items: center;
   gap: 0.35rem;
   transition: opacity 0.2s;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 2px;
 }
 .text-link:hover { opacity: 1; }
@@ -416,7 +424,7 @@
 .visual-label {
   position: absolute;
   top: 20px; right: 20px;
-  background: rgba(10,10,10,0.8);
+  background: rgba(255,255,255,0.92);
   border: 1px solid var(--glass-border);
   border-radius: 100px;
   padding: 0.4rem 0.9rem;
@@ -648,7 +656,7 @@
 .product-card:hover {
   border-color: rgba(200,169,110,0.35);
   transform: translateY(-6px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  box-shadow: 0 12px 36px rgba(32,41,54,0.10);
 }
 .product-visual {
   height: 180px;
@@ -722,17 +730,17 @@
   height: 100%;
   border: none;
   display: block;
-  filter: grayscale(60%) invert(90%) hue-rotate(180deg) brightness(0.85) contrast(1.1);
+  filter: grayscale(30%);
   transition: filter 0.4s;
 }
 .map-card:hover iframe {
-  filter: grayscale(20%) invert(90%) hue-rotate(180deg) brightness(0.9) contrast(1.1);
+  filter: grayscale(0%);
 }
 .map-overlay {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   padding: 1rem 1.25rem;
-  background: linear-gradient(0deg, rgba(10,10,10,0.9) 0%, transparent 100%);
+  background: linear-gradient(0deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.5) 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -810,7 +818,7 @@
 .bag-drawer {
   width: 380px;
   height: 100%;
-  background: #111;
+  background: var(--card);
   border-left: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
@@ -862,7 +870,7 @@
   padding: 1rem;
   border-radius: 12px;
   background: var(--gold);
-  color: #0a0a0a;
+  color: #ffffff;
   font-weight: 700;
   font-size: 0.88rem;
   transition: background 0.2s;

@@ -25,6 +25,7 @@ import {
   uniqueIndex,
   index,
   check,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -271,6 +272,7 @@ export const vente = pgTable("vente", {
 // ---------------------------------------------------------------------
 export const ligneVente = pgTable("ligne_vente", {
   id: serial("id").primaryKey(),
+  annulee: boolean("annulee").notNull().default(false),
   venteId: integer("vente_id")
     .notNull()
     .references(() => vente.id, { onDelete: "cascade" }),

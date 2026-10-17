@@ -1,7 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 
@@ -26,19 +24,19 @@ export function StepIndicator({ current }: { current: StepId }) {
               <div className={cn(
                 'size-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all',
                 done   ? 'bg-[#c8a96e] border-[#c8a96e] text-black' :
-                active ? 'bg-[#c8a96e]/15 border-[#c8a96e] text-[#c8a96e]' :
-                         'bg-transparent border-white/20 text-muted-foreground'
+                active ? 'bg-[#c8a96e]/15 border-[#c8a96e] text-primary' :
+                         'bg-transparent border-foreground/20 text-muted-foreground'
               )}>
                 {done ? <Check className="size-4" /> : i + 1}
               </div>
               <span className={cn('text-[10px] font-medium whitespace-nowrap',
-                active ? 'text-[#c8a96e]' : done ? 'text-foreground' : 'text-muted-foreground'
+                active ? 'text-primary' : done ? 'text-foreground' : 'text-muted-foreground'
               )}>
                 {step.label}
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={cn('h-px w-16 mx-2 mb-4 transition-all', i < idx ? 'bg-[#c8a96e]' : 'bg-white/15')} />
+              <div className={cn('h-px w-16 mx-2 mb-4 transition-all', i < idx ? 'bg-[#c8a96e]' : 'bg-foreground/15')} />
             )}
           </div>
         )

@@ -1,393 +1,234 @@
-'use server'
+﻿'use server'
 
 import { db } from '@/db'
-import { vente, facture, ligneVente, client, mouvementStock, plateau } from '@/db/schema'
-import { eq, sql } from 'drizzle-orm'
+import { vente, facture, ligneVente, client, mouvementStock, plateau, article, articleVitreDetail, articleAluDetail, parametreSociete } from '@/db/schema'
+import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { getSession } from '@/features/auth/session'
-import { getArticleForSale, getPlateauById } from '../queries/vente'
 import { calculateInvoiceTotals } from '@/features/invoice/models/invoice'
-import type { VenteFormState, LigneFormState, ModeLigne, VenteOptionsFormState } from '../types'
+import { SaleError, positiveInteger, decimal, dimension, lineAmounts, modesForArticle, cutFits, cutQuantity, canTransition } from '../lib/rules'
+import type { VenteFormState, LigneFormState, ModeLigne, VenteOptionsFormState, StatutVente } from '../types'
 
-// ── Créer ou trouver un client à la volée ──────────────────────────────
-async function upsertClient(nom: string, telephone: string | null): Promise<number> {
-  const existing = await db.select({ id: client.id }).from(client)
-    .where(eq(client.nom, nom)).limit(1)
-  if (existing.length > 0) return existing[0].id
-  const [c] = await db.insert(client).values({ nom, telephone }).returning({ id: client.id })
-  return c.id
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+async function salesUser() {
+  const session = await getSession()
+  if (!session || !['admin', 'commercial'].includes(session.role)) throw new SaleError('Accès réservé aux administrateurs et commerciaux.')
+  return session
 }
 
-// ── Créer une vente (brouillon) ────────────────────────────────────────
-export async function createVente(
-  _prev: VenteFormState,
-  formData: FormData
-): Promise<VenteFormState> {
-  const session = await getSession()
-  if (!session) return { error: 'Non authentifié.' }
+function refresh(id?: number) {
+  revalidatePath('/ventes')
+  revalidatePath('/plateaux')
+  revalidatePath('/stock')
+  if (id) revalidatePath(`/ventes/${id}`)
+}
 
-  const clientIdRaw = formData.get('clientId') as string
-  const clientNom = (formData.get('clientNom') as string)?.trim()
-  const clientTel = (formData.get('clientTel') as string)?.trim() || null
-  const date = (formData.get('date') as string) || new Date().toISOString().slice(0, 10)
+function formError(error: unknown) {
+  if (error instanceof SaleError) return { error: error.message }
+  console.error('Sale operation failed', error)
+  return { error: 'Opération impossible. Aucune modification enregistrée. Vérifiez les données et réessayez.' }
+}
 
-  let clientId: number
-  if (clientIdRaw && clientIdRaw !== '') {
-    clientId = Number(clientIdRaw)
+async function lockSale(tx: Transaction, id: number) {
+  positiveInteger(id, 'Vente')
+  const [row] = await tx.select().from(vente).where(eq(vente.id, id)).for('update')
+  if (!row) throw new SaleError('Vente introuvable.')
+  return row
+}
+
+async function recalculate(tx: Transaction, id: number) {
+  await tx.execute(sql`UPDATE vente SET total = (SELECT COALESCE(SUM(montant), 0) FROM ligne_vente WHERE vente_id = ${id} AND annulee = false) WHERE id = ${id}`)
+}
+
+// Restore only the net quantity actually removed, using the immutable stock ledger.
+// The current stock is locked, so removing an older cut cannot overwrite later cuts.
+async function restoreLine(tx: Transaction, line: typeof ligneVente.$inferSelect, userId: number) {
+  const [balance] = await tx.select({ quantity: sql<string>`COALESCE(SUM(${mouvementStock.quantite}), 0)` })
+    .from(mouvementStock).where(eq(mouvementStock.ligneVenteId, line.id))
+  const restore = -Number(balance.quantity)
+  if (restore <= 0) return
+  let stockAfter: string
+  if (line.plateauId) {
+    const [sheet] = await tx.select().from(plateau).where(eq(plateau.id, line.plateauId)).for('update')
+    if (!sheet) throw new SaleError('Plateau introuvable.')
+    stockAfter = (Number(sheet.surfaceRestanteM2) + restore).toFixed(2)
+    await tx.update(plateau).set({ surfaceRestanteM2: stockAfter, statut: 'disponible' }).where(eq(plateau.id, sheet.id))
   } else {
-    if (!clientNom) return { error: 'Le nom du client est requis.' }
-    clientId = await upsertClient(clientNom, clientTel)
+    const [alu] = await tx.select().from(articleAluDetail).where(eq(articleAluDetail.articleId, line.articleId)).for('update')
+    if (!alu) throw new SaleError('Stock aluminium introuvable.')
+    stockAfter = String(alu.stockBarres + restore)
+    await tx.update(articleAluDetail).set({ stockBarres: Number(stockAfter) }).where(eq(articleAluDetail.articleId, line.articleId))
   }
-
-  const [v] = await db
-    .insert(vente)
-    .values({ numero: 0, clientId, commercialId: session.id, date, statut: 'brouillon', total: '0' })
-    .returning({ id: vente.id })
-
-  revalidatePath('/dashboard/ventes')
-  return { success: true, venteId: v.id }
+  await tx.insert(mouvementStock).values({ articleId: line.articleId, plateauId: line.plateauId, ligneVenteId: line.id, utilisateurId: userId, type: 'annulation', quantite: restore.toFixed(2), stockApres: stockAfter, motif: `Annulation de la ligne ${line.id}` })
 }
 
-export async function updateVenteOptions(
-  venteId: number,
-  _prev: VenteOptionsFormState,
-  formData: FormData,
-): Promise<VenteOptionsFormState> {
-  const session = await getSession()
-  if (!session) return { error: 'Non authentifié.' }
-
-  const modeRemise = formData.get('modeRemise')
-  const valeurRemise = Number(formData.get('valeurRemise'))
-  const fraisLivraison = Number(formData.get('fraisLivraison'))
-
-  if (modeRemise !== 'pourcentage' && modeRemise !== 'montant') {
-    return { error: 'Choisissez un mode de remise valide.' }
-  }
-  if (!Number.isFinite(valeurRemise) || valeurRemise < 0 || !Number.isFinite(fraisLivraison) || fraisLivraison < 0) {
-    return { error: 'Les montants doivent être des nombres positifs.' }
-  }
-  if (modeRemise === 'pourcentage' && valeurRemise > 100) {
-    return { error: 'La remise en pourcentage ne peut pas dépasser 100 %.' }
-  }
-
-  const [venteData] = await db
-    .select({ statut: vente.statut, total: vente.total })
-    .from(vente)
-    .where(eq(vente.id, venteId))
-    .limit(1)
-
-  if (!venteData || !['confirmee', 'livree'].includes(venteData.statut)) {
-    return { error: 'La remise et la livraison se règlent depuis une vente confirmée.' }
-  }
-
-  const [existingInvoice] = await db
-    .select({ id: facture.id, statut: facture.statut })
-    .from(facture)
-    .where(eq(facture.venteId, venteId))
-    .limit(1)
-  if (existingInvoice && existingInvoice.statut !== 'brouillon') {
-    return { error: 'La facture est déjà émise et ne peut plus être modifiée.' }
-  }
-  if (modeRemise === 'montant' && valeurRemise > Number(venteData.total)) {
-    return { error: 'La remise ne peut pas dépasser le montant des articles.' }
-  }
-
-  await db
-    .update(vente)
-    .set({
-      modeRemise,
-      valeurRemise: valeurRemise.toFixed(2),
-      fraisLivraison: fraisLivraison.toFixed(2),
-    })
-    .where(eq(vente.id, venteId))
-
-  if (existingInvoice) {
-    const totals = calculateInvoiceTotals(venteData.total, modeRemise, valeurRemise, fraisLivraison)
-    await db.update(facture).set({
-      caissierId: session.id,
-      sousTotalHt: totals.sousTotalHt.toFixed(2),
-      modeRemise: totals.modeRemise,
-      valeurRemise: totals.valeurRemise.toFixed(2),
-      montantRemise: totals.montantRemise.toFixed(2),
-      fraisLivraison: totals.fraisLivraison.toFixed(2),
-      totalHt: totals.totalHt.toFixed(2),
-      montantTva: '0',
-      totalTtc: totals.totalTtc.toFixed(2),
-    }).where(eq(facture.id, existingInvoice.id))
-  }
-
-  revalidatePath(`/dashboard/ventes/${venteId}`)
-  revalidatePath('/dashboard/ventes')
-  return { success: true }
-}
-
-// ── Ajouter une ligne ──────────────────────────────────────────────────
-export async function addLigne(
-  _prev: LigneFormState,
-  formData: FormData,
-): Promise<LigneFormState> {
-  const session = await getSession()
-  if (!session) return { error: 'Non authentifié.' }
-
-  const venteId = Number(formData.get('venteId'))
-  const articleId = Number(formData.get('articleId'))
-  const mode = formData.get('mode') as ModeLigne
-  const nombre = Number(formData.get('nombre'))
-  const prixAppliqueRaw = formData.get('prixApplique') as string
-  const plateauId = formData.get('plateauId') ? Number(formData.get('plateauId')) : null
-  const longueurM = formData.get('longueurM') ? (formData.get('longueurM') as string) : null
-  const hauteurM = formData.get('hauteurM') ? (formData.get('hauteurM') as string) : null
-
-  if (!venteId || !articleId || !mode || !nombre) {
-    return { error: 'Champs obligatoires manquants.' }
-  }
-
-  // ── Article avec détail pour auto-calcul du prix ─────────────────────
-  const articleData = await getArticleForSale(articleId)
-  if (!articleData) {
-    return { error: 'Article introuvable.' }
-  }
-
-  const isVitre = articleData.type === 'vitre'
-  const isPlateauMode = ['decoupe', 'plateau_entier', 'plateau_gros'].includes(mode)
-
-  // ════════════════════════════════════════════════════════════════════
-  // Auto-calcul du prix selon le type d'article et le mode de vente
-  // ════════════════════════════════════════════════════════════════════
-  let prixApplique: string
-  let quantiteFacturee: string
-  let montant: string
-  let surfaceAVendre: number = 0
-  let surfaceRestanteApres: string | null = null
-
-  if (isVitre && isPlateauMode) {
-    // --- VITRE : le prix est calculé automatiquement ---
-    const vd = articleData.vitreDetail
-    if (!vd) return { error: 'Détails vitre manquants pour cet article.' }
-
-    if (mode === 'decoupe') {
-      if (!longueurM || !hauteurM) {
-        return { error: 'Les dimensions sont requises pour une découpe.' }
+export async function createVente(_prev: VenteFormState, data: FormData): Promise<VenteFormState> {
+  try {
+    const user = await salesUser()
+    const nom = String(data.get('clientNom') ?? '').trim()
+    const telephone = String(data.get('clientTel') ?? '').trim() || null
+    const date = String(data.get('date') || new Intl.DateTimeFormat('en-CA', { timeZone: 'Indian/Antananarivo' }).format(new Date()))
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) throw new SaleError('Date invalide.')
+    const id = await db.transaction(async tx => {
+      let clientId = Number(data.get('clientId'))
+      if (data.get('clientId')) {
+        positiveInteger(clientId, 'Client')
+        const [existing] = await tx.select({ id: client.id }).from(client).where(eq(client.id, clientId))
+        if (!existing) throw new SaleError('Client introuvable.')
+      } else {
+        if (!nom || nom.length > 150 || (telephone?.length ?? 0) > 30) throw new SaleError('Nom requis (150 caractères maximum), téléphone limité à 30 caractères.')
+        // Never merge different people solely because their names match.
+        const [created] = await tx.insert(client).values({ nom, telephone }).returning({ id: client.id })
+        clientId = created.id
       }
-      const surface = Number(longueurM) * Number(hauteurM) * nombre
-      if (surface <= 0) return { error: 'La surface calculée est nulle ou négative.' }
-
-      surfaceAVendre = surface
-      quantiteFacturee = surface.toFixed(2)
-      prixApplique = articleData.prixVente // prix au m² stocké sur l'article
-      montant = (surface * Number(prixApplique)).toFixed(2)
-
-    } else if (mode === 'plateau_entier') {
-      prixApplique = vd.prixPlateauEntier
-      quantiteFacturee = nombre.toString()
-      montant = (nombre * Number(prixApplique)).toFixed(2)
-
-    } else {
-      // mode === 'plateau_gros'
-      if (!vd.prixPlateauGros) return { error: 'Aucun prix plateau gros défini.' }
-      prixApplique = vd.prixPlateauGros
-      quantiteFacturee = nombre.toString()
-      montant = (nombre * Number(prixApplique)).toFixed(2)
-    }
-
-  } else {
-    // --- NON-VITRE (alu / accessoire / service) ---
-    prixApplique = prixAppliqueRaw || articleData.prixVente
-
-    if (mode === 'decoupe' && longueurM && hauteurM) {
-      const surface = Number(longueurM) * Number(hauteurM) * nombre
-      surfaceAVendre = surface
-      quantiteFacturee = surface.toFixed(2)
-      montant = (surface * Number(prixApplique)).toFixed(2)
-    } else {
-      quantiteFacturee = nombre.toString()
-      montant = (nombre * Number(prixApplique)).toFixed(2)
-    }
-  }
-
-  // ── Insertion de la ligne ───────────────────────────────────────────
-  const [ligne] = await db
-    .insert(ligneVente)
-    .values({
-      venteId, articleId, plateauId, mode, nombre,
-      longueurM, hauteurM, quantiteFacturee, prixApplique, montant,
+      const [created] = await tx.insert(vente).values({ clientId, commercialId: user.id, date }).returning({ id: vente.id })
+      return created.id
     })
-    .returning({ id: ligneVente.id })
-
-  // ════════════════════════════════════════════════════════════════════
-  // Gestion du stock (plateau de verre brut)
-  // ════════════════════════════════════════════════════════════════════
-  if (isVitre && isPlateauMode && plateauId) {
-    const plateauData = await getPlateauById(plateauId)
-    if (!plateauData) return { error: 'Plateau introuvable.' }
-
-    const surfaceOrigine =
-      Number(plateauData.longueurOrigineM) * Number(plateauData.hauteurOrigineM)
-
-    if (mode === 'decoupe') {
-      // Découpe : on enlève la surface découpée
-      const nouvelleSurface = (Number(plateauData.surfaceRestanteM2) - surfaceAVendre).toFixed(2)
-      surfaceRestanteApres = nouvelleSurface
-
-      await db
-        .update(plateau)
-        .set({
-          surfaceRestanteM2: nouvelleSurface,
-          statut: Number(nouvelleSurface) <= 0 ? 'epuise' : 'disponible',
-        })
-        .where(eq(plateau.id, plateauId))
-
-      await db.insert(mouvementStock).values({
-        articleId, plateauId, ligneVenteId: ligne.id, utilisateurId: session.id,
-        type: 'vente', quantite: (-surfaceAVendre).toFixed(2),
-        stockApres: nouvelleSurface,
-        motif: `Vente découpe ${articleData.designation} (${surfaceAVendre.toFixed(2)} m²)`,
-      })
-
-    } else {
-      // plateau_entier / plateau_gros : tout le plateau est vendu
-      surfaceRestanteApres = '0'
-
-      await db
-        .update(plateau)
-        .set({ surfaceRestanteM2: '0', statut: 'vendu_entier' })
-        .where(eq(plateau.id, plateauId))
-
-      await db.insert(mouvementStock).values({
-        articleId, plateauId, ligneVenteId: ligne.id, utilisateurId: session.id,
-        type: 'vente', quantite: (-surfaceOrigine).toFixed(2),
-        stockApres: '0',
-        motif: `Vente ${mode === 'plateau_entier' ? 'plateau entier' : 'plateau gros'} — ${articleData.designation}`,
-      })
-    }
-
-    // Mettre à jour surfaceRestanteApres sur la ligne
-    await db
-      .update(ligneVente)
-      .set({ surfaceRestanteApres })
-      .where(eq(ligneVente.id, ligne.id))
-  }
-
-  // Recalcul du total de la vente
-  await db.execute(sql`
-    UPDATE vente SET total = (
-      SELECT COALESCE(SUM(montant), 0) FROM ligne_vente WHERE vente_id = ${venteId}
-    ) WHERE id = ${venteId}
-  `)
-
-  revalidatePath(`/dashboard/ventes/${venteId}`)
-  revalidatePath('/dashboard/plateaux')
-  return { success: true }
+    refresh(id)
+    return { success: true, venteId: id }
+  } catch (error) { return formError(error) }
 }
 
-// ── Supprimer une ligne (restaure le stock plateau si nécessaire) ────────
-export async function deleteLigne(ligneId: number, venteId: number): Promise<void> {
-  const session = await getSession()
-  if (!session) return
-
-  // Récupérer les infos de la ligne avant suppression
-  const [ligne] = await db
-    .select({
-      id: ligneVente.id,
-      articleId: ligneVente.articleId,
-      plateauId: ligneVente.plateauId,
-      mode: ligneVente.mode,
-      nombre: ligneVente.nombre,
-      longueurM: ligneVente.longueurM,
-      hauteurM: ligneVente.hauteurM,
-      quantiteFacturee: ligneVente.quantiteFacturee,
-      surfaceRestanteApres: ligneVente.surfaceRestanteApres,
-    })
-    .from(ligneVente)
-    .where(eq(ligneVente.id, ligneId))
-
-  if (!ligne) return
-
-  // Restaurer le stock plateau si la ligne concerne un plateau
-  if (ligne.plateauId && ligne.surfaceRestanteApres != null) {
-    if (ligne.surfaceRestanteApres !== '0') {
-      // Cas découpe : on restaure la surface vendue au plateau
-      const surfaceRestanteAvant = Number(ligne.surfaceRestanteApres)
-      const surfaceOrigine = Number(ligne.quantiteFacturee)
-      const surfaceRestauree = (surfaceRestanteAvant + surfaceOrigine).toFixed(2)
-
-      await db
-        .update(plateau)
-        .set({
-          surfaceRestanteM2: surfaceRestauree,
-          statut: Number(surfaceRestauree) > 0 ? 'disponible' : 'epuise',
-        })
-        .where(eq(plateau.id, ligne.plateauId))
-
-      await db.insert(mouvementStock).values({
-        articleId: ligne.articleId,
-        plateauId: ligne.plateauId,
-        ligneVenteId: ligne.id,
-        utilisateurId: session.id,
-        type: 'annulation',
-        quantite: surfaceOrigine.toFixed(2),
-        stockApres: surfaceRestauree,
-        motif: `Annulation vente découpe (ligne ${ligne.id})`,
-      })
-    } else {
-      // Cas plateau_entier / plateau_gros : restaurer la surface complète du plateau
-      const plateauData = await getPlateauById(ligne.plateauId)
-      if (plateauData) {
-        const surfaceOrigine = (
-          Number(plateauData.longueurOrigineM) * Number(plateauData.hauteurOrigineM)
-        ).toFixed(2)
-
-        await db
-          .update(plateau)
-          .set({
-            surfaceRestanteM2: surfaceOrigine,
-            statut: 'disponible',
-          })
-          .where(eq(plateau.id, ligne.plateauId))
-
-        await db.insert(mouvementStock).values({
-          articleId: ligne.articleId,
-          plateauId: ligne.plateauId,
-          ligneVenteId: ligne.id,
-          utilisateurId: session.id,
-          type: 'annulation',
-          quantite: surfaceOrigine,
-          stockApres: surfaceOrigine,
-          motif: `Annulation vente ${ligne.mode} (ligne ${ligne.id})`,
-        })
+export async function addLigne(_prev: LigneFormState, data: FormData): Promise<LigneFormState> {
+  try {
+    const user = await salesUser()
+    const venteId = positiveInteger(Number(data.get('venteId')), 'Vente')
+    const articleId = positiveInteger(Number(data.get('articleId')), 'Article')
+    const nombre = positiveInteger(Number(data.get('nombre')), 'Nombre')
+    const mode = String(data.get('mode')) as ModeLigne
+    await db.transaction(async tx => {
+      const sale = await lockSale(tx, venteId)
+      if (sale.statut !== 'brouillon') throw new SaleError('Seul un brouillon peut recevoir des articles.')
+      const [item] = await tx.select().from(article).where(eq(article.id, articleId)).for('share')
+      if (!item) throw new SaleError('Article introuvable.')
+      const [glass] = await tx.select().from(articleVitreDetail).where(eq(articleVitreDetail.articleId, articleId))
+      if (!modesForArticle(item.type, glass?.prixPlateauGros != null).includes(mode)) throw new SaleError('Mode de vente incompatible avec cet article.')
+      let price = item.prixVente
+      let quantity = nombre
+      let sheetId: number | null = null
+      let length: string | null = null
+      let height: string | null = null
+      let stockAfter: string | null = null
+      let stockQuantity = 0
+      if (item.type === 'vitre') {
+        if (!glass) throw new SaleError('Configuration vitre manquante.')
+        sheetId = positiveInteger(Number(data.get('plateauId')), 'Plateau')
+        const [sheet] = await tx.select().from(plateau).where(eq(plateau.id, sheetId)).for('update')
+        if (!sheet || sheet.articleId !== articleId || sheet.statut !== 'disponible') throw new SaleError('Choisissez un plateau disponible correspondant à cet article.')
+        const remaining = Number(sheet.surfaceRestanteM2)
+        if (mode === 'decoupe') {
+          const l = dimension(data.get('longueurM'), 'Longueur')
+          const h = dimension(data.get('hauteurM'), 'Hauteur')
+          const [settings] = await tx.select().from(parametreSociete).limit(1)
+          if (!cutFits(l, h, Number(sheet.longueurOrigineM), Number(sheet.hauteurOrigineM), Number(settings?.toleranceMesureM ?? '0.005'))) throw new SaleError('Dimensions supérieures à celles du plateau, même après rotation.')
+          length = l.toFixed(3)
+          height = h.toFixed(3)
+          quantity = cutQuantity(l, h, nombre)
+          stockQuantity = quantity
+          if (quantity > remaining) throw new SaleError(`Surface insuffisante : ${remaining} m² disponibles.`)
+        } else {
+          if (nombre !== 1) throw new SaleError('Un seul plateau est autorisé par ligne.')
+          const original = Number((Number(sheet.longueurOrigineM) * Number(sheet.hauteurOrigineM)).toFixed(2))
+          if (remaining !== original) throw new SaleError('Ce plateau a déjà été découpé. Il ne peut pas être vendu entier.')
+          stockQuantity = remaining
+          price = mode === 'plateau_gros' ? glass.prixPlateauGros! : glass.prixPlateauEntier
+        }
+        stockAfter = (remaining - stockQuantity).toFixed(2)
+        await tx.update(plateau).set({ surfaceRestanteM2: stockAfter, statut: mode !== 'decoupe' ? 'vendu_entier' : Number(stockAfter) === 0 ? 'epuise' : 'disponible' }).where(eq(plateau.id, sheetId))
+      } else if (item.type === 'alu') {
+        const [alu] = await tx.select().from(articleAluDetail).where(eq(articleAluDetail.articleId, articleId)).for('update')
+        if (!alu) throw new SaleError('Configuration aluminium manquante.')
+        price = mode === 'pack' ? alu.prixPack : item.prixVente
+        stockQuantity = nombre * (mode === 'pack' ? alu.nombreParPack : 1)
+        if (stockQuantity > alu.stockBarres) throw new SaleError(`Stock insuffisant : ${alu.stockBarres} barres disponibles.`)
+        if (stockQuantity > 99999999.99 || alu.stockBarres - stockQuantity > 99999999.99) throw new SaleError('Le mouvement dépasse la capacité du registre de stock (numeric 10,2).')
+        stockAfter = String(alu.stockBarres - stockQuantity)
+        await tx.update(articleAluDetail).set({ stockBarres: Number(stockAfter) }).where(eq(articleAluDetail.articleId, articleId))
+      } else if (data.get('prixApplique')) {
+        price = decimal(data.get('prixApplique'), 'Prix').toFixed(2)
       }
+      const amounts = lineAmounts(quantity, price)
+      const [line] = await tx.insert(ligneVente).values({ venteId, articleId, plateauId: sheetId, mode, nombre, longueurM: length, hauteurM: height, prixApplique: price, ...amounts, surfaceRestanteApres: sheetId ? stockAfter : null }).returning()
+      if (stockAfter != null) await tx.insert(mouvementStock).values({ articleId, plateauId: sheetId, ligneVenteId: line.id, utilisateurId: user.id, type: 'vente', quantite: (-stockQuantity).toFixed(2), stockApres: stockAfter, motif: `Bon ${sale.numero} · ${mode}` })
+      await recalculate(tx, venteId)
+    })
+    refresh(venteId)
+    return { success: true }
+  } catch (error) { return formError(error) }
+}
+
+export async function deleteLigne(ligneId: number, venteId: number): Promise<LigneFormState> {
+  try {
+  const user = await salesUser()
+  await db.transaction(async tx => {
+    const sale = await lockSale(tx, venteId)
+    if (sale.statut !== 'brouillon') throw new SaleError('Seul un brouillon peut être modifié.')
+    const [line] = await tx.select().from(ligneVente).where(and(eq(ligneVente.id, ligneId), eq(ligneVente.venteId, venteId), eq(ligneVente.annulee, false))).for('update')
+    if (!line) return
+    await restoreLine(tx, line, user.id)
+    await tx.update(ligneVente).set({ annulee: true }).where(eq(ligneVente.id, ligneId))
+    await recalculate(tx, venteId)
+  })
+  refresh(venteId)
+  return { success: true }
+  } catch (error) { return formError(error) }
+}
+
+async function changeStatus(id: number, statut: StatutVente, onlyDraft = false) {
+  const user = await salesUser()
+  await db.transaction(async tx => {
+    const sale = await lockSale(tx, id)
+    if (sale.statut === statut) return
+    if (onlyDraft && sale.statut !== 'brouillon') throw new SaleError('Seul un brouillon peut être retiré.')
+    if (!canTransition(sale.statut, statut)) throw new SaleError('Transition de statut interdite.')
+    const lines = await tx.select().from(ligneVente).where(and(eq(ligneVente.venteId, id), eq(ligneVente.annulee, false))).orderBy(ligneVente.id)
+    if (statut === 'confirmee' && lines.length === 0) throw new SaleError('Ajoutez au moins un article avant de confirmer.')
+    if (statut === 'annulee') {
+      const invoices = await tx.select().from(facture).where(eq(facture.venteId, id)).for('update')
+      if (invoices.some(invoice => invoice.statut !== 'brouillon' && invoice.statut !== 'annulee')) throw new SaleError('Une facture émise nécessite un traitement comptable avant annulation.')
+      for (const line of lines) await restoreLine(tx, line, user.id)
+      await tx.update(facture).set({ statut: 'annulee' }).where(eq(facture.venteId, id))
     }
-  }
-
-  await db.delete(ligneVente).where(eq(ligneVente.id, ligneId))
-
-  // Recalcul du total de la vente
-  await db.execute(sql`
-    UPDATE vente SET total = (
-      SELECT COALESCE(SUM(montant), 0) FROM ligne_vente WHERE vente_id = ${venteId}
-    ) WHERE id = ${venteId}
-  `)
-
-  revalidatePath(`/dashboard/ventes/${venteId}`)
-  revalidatePath('/dashboard/plateaux')
+    await tx.update(vente).set({ statut }).where(eq(vente.id, id))
+  })
+  refresh(id)
 }
 
-// ── Changer le statut d'une vente ──────────────────────────────────────
-export async function updateStatutVente(
-  id: number,
-  statut: 'brouillon' | 'confirmee' | 'livree' | 'annulee',
-): Promise<void> {
-  const session = await getSession()
-  if (!session) return
-  await db.update(vente).set({ statut }).where(eq(vente.id, id))
-  revalidatePath(`/dashboard/ventes/${id}`)
-  revalidatePath('/dashboard/ventes')
+export async function updateStatutVente(id: number, statut: StatutVente): Promise<LigneFormState> {
+  try {
+    await changeStatus(id, statut)
+    return { success: true }
+  } catch (error) { return formError(error) }
 }
 
-// ── Supprimer une vente (brouillon) ─────────────────────────────────────
-export async function deleteVente(id: number): Promise<void> {
-  const session = await getSession()
-  if (!session) return
-  await db.delete(vente).where(eq(vente.id, id))
-  revalidatePath('/dashboard/ventes')
+// An archived cancellation keeps the immutable stock ledger and sale numbers intact.
+export async function deleteVente(id: number): Promise<LigneFormState> {
+  try {
+    await changeStatus(id, 'annulee', true)
+    return { success: true }
+  } catch (error) { return formError(error) }
+}
+
+export async function updateVenteOptions(venteId: number, _prev: VenteOptionsFormState, data: FormData): Promise<VenteOptionsFormState> {
+  try {
+    const user = await salesUser()
+    const modeRemise = data.get('modeRemise')
+    if (modeRemise !== 'pourcentage' && modeRemise !== 'montant') throw new SaleError('Mode de remise invalide.')
+    const valeurRemise = decimal(data.get('valeurRemise'), 'Remise')
+    const fraisLivraison = decimal(data.get('fraisLivraison'), 'Livraison')
+    await db.transaction(async tx => {
+      const sale = await lockSale(tx, venteId)
+      if (!['confirmee', 'livree'].includes(sale.statut)) throw new SaleError('Confirmez la vente avant de régler la facturation.')
+      if ((modeRemise === 'pourcentage' && valeurRemise > 100) || (modeRemise === 'montant' && valeurRemise > Number(sale.total))) throw new SaleError('La remise dépasse le montant autorisé.')
+      const invoices = await tx.select().from(facture).where(eq(facture.venteId, venteId)).for('update')
+      if (invoices.some(invoice => invoice.statut !== 'brouillon')) throw new SaleError('La facture est verrouillée.')
+      const totals = calculateInvoiceTotals(sale.total, modeRemise, valeurRemise, fraisLivraison)
+      if (totals.totalTtc > 999999999999.99) throw new SaleError('Total supérieur à la limite autorisée.')
+      await tx.update(vente).set({ modeRemise, valeurRemise: valeurRemise.toFixed(2), fraisLivraison: fraisLivraison.toFixed(2) }).where(eq(vente.id, venteId))
+      await tx.update(facture).set({ caissierId: user.id, sousTotalHt: totals.sousTotalHt.toFixed(2), modeRemise, valeurRemise: valeurRemise.toFixed(2), montantRemise: totals.montantRemise.toFixed(2), fraisLivraison: fraisLivraison.toFixed(2), totalHt: totals.totalHt.toFixed(2), montantTva: '0', totalTtc: totals.totalTtc.toFixed(2) }).where(eq(facture.venteId, venteId))
+    })
+    refresh(venteId)
+    return { success: true }
+  } catch (error) { return formError(error) }
 }

@@ -46,9 +46,9 @@ function CreateForm({ articlesVitre }: { articlesVitre: Props['articlesVitre'] }
           <label className="text-xs text-muted-foreground">Article vitre *</label>
           <select name="articleId" required
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-            <option value="" className="bg-[#111]">— Choisir —</option>
+            <option value="" className="bg-card">— Choisir —</option>
             {articlesVitre.map((a) => (
-              <option key={a.id} value={a.id} className="bg-[#111]">{a.code} · {a.designation}</option>
+              <option key={a.id} value={a.id} className="bg-card">{a.code} · {a.designation}</option>
             ))}
           </select>
         </div>
@@ -93,7 +93,7 @@ function EmplacementEdit({ id, current }: { id: number; current: string | null }
       className="flex items-center gap-1">
       <Input value={val} onChange={(e) => setVal(e.target.value)}
         className="h-6 text-xs w-24" autoFocus />
-      <button type="submit" className="text-emerald-400 hover:text-emerald-300"><Check className="size-3.5" /></button>
+      <button type="submit" className="text-emerald-700 hover:text-emerald-300"><Check className="size-3.5" /></button>
       <button type="button" onClick={() => setEditing(false)} className="text-muted-foreground hover:text-foreground"><X className="size-3.5" /></button>
     </form>
   )
@@ -121,7 +121,7 @@ export function PlateauManager({ plateaux, articlesVitre }: Props) {
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-white/8">
+            <tr className="border-b border-foreground/8">
               {['Article', 'Dimensions', 'Surface restante', 'Emplacement', 'Statut', ''].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">{h}</th>
               ))}
@@ -132,7 +132,7 @@ export function PlateauManager({ plateaux, articlesVitre }: Props) {
               <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">Aucun plateau.</td></tr>
             )}
             {plateaux.map((p) => (
-              <tr key={p.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+              <tr key={p.id} className="border-b border-foreground/5 last:border-0 hover:bg-foreground/3 transition-colors">
                 <td className="px-4 py-3">
                   <p className="font-medium text-xs">{p.articleDesignation}</p>
                   <p className="text-[10px] text-muted-foreground font-mono">{p.articleCode}</p>
@@ -141,7 +141,7 @@ export function PlateauManager({ plateaux, articlesVitre }: Props) {
                   {p.longueurOrigineM} × {p.hauteurOrigineM} m
                 </td>
                 <td className="px-4 py-3">
-                  <span className={cn('text-sm font-semibold', Number(p.surfaceRestanteM2) < 1 ? 'text-red-400' : 'text-emerald-400')}>
+                  <span className={cn('text-sm font-semibold', Number(p.surfaceRestanteM2) < 1 ? 'text-red-700' : 'text-emerald-700')}>
                     {p.surfaceRestanteM2} m²
                   </span>
                 </td>
@@ -154,7 +154,7 @@ export function PlateauManager({ plateaux, articlesVitre }: Props) {
                     onChange={(e) => updateStatutPlateau(p.id, e.target.value as StatutPlateau)}
                     className="h-7 rounded-lg border border-input bg-transparent px-2 text-xs text-foreground outline-none focus-visible:border-ring">
                     {(['disponible', 'epuise', 'vendu_entier'] as StatutPlateau[]).map((s) => (
-                      <option key={s} value={s} className="bg-[#111]">{STATUT_PLATEAU_LABELS[s]}</option>
+                      <option key={s} value={s} className="bg-card">{STATUT_PLATEAU_LABELS[s]}</option>
                     ))}
                   </select>
                 </td>

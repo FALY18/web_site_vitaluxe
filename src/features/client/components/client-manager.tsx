@@ -55,7 +55,7 @@ function EditRow({ client, onDone }: { client: ClientRow; onDone: () => void }) 
   }, initial)
 
   return (
-    <tr className="border-b border-white/5 bg-white/3">
+    <tr className="border-b border-foreground/5 bg-foreground/3">
       <td colSpan={5} className="px-4 py-3">
         <form action={action} className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <input type="hidden" name="id" value={client.id} />
@@ -92,7 +92,7 @@ export function ClientManager({ clients }: { clients: ClientRow[] }) {
       <div className="rounded-xl bg-card ring-1 ring-foreground/10 overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-white/8">
+            <tr className="border-b border-foreground/8">
               {['Nom', 'Téléphone', 'Adresse', 'Ventes', ''].map((h) => (
                 <th key={h} className="text-left px-4 py-3 text-xs text-muted-foreground uppercase tracking-wider font-medium">{h}</th>
               ))}
@@ -105,12 +105,12 @@ export function ClientManager({ clients }: { clients: ClientRow[] }) {
             {clients.map((c) => editId === c.id ? (
               <EditRow key={c.id} client={c} onDone={() => setEditId(null)} />
             ) : (
-              <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/3 transition-colors">
+              <tr key={c.id} className="border-b border-foreground/5 last:border-0 hover:bg-foreground/3 transition-colors">
                 <td className="px-4 py-3 font-medium">{c.nom}</td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">{c.telephone ?? '—'}</td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">{c.adresse ?? '—'}</td>
                 <td className="px-4 py-3 text-xs">
-                  <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-muted-foreground">{c.nbVentes ?? 0}</span>
+                  <span className="px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground">{c.nbVentes ?? 0}</span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">

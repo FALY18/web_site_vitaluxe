@@ -42,8 +42,8 @@ export function SidebarNav({ role }: { role: Role }) {
             className={cn(
               'flex min-h-11 shrink-0 items-center gap-3 whitespace-nowrap px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
               active
-                ? 'bg-[#c8a96e]/15 text-[#c8a96e] border border-[#c8a96e]/25'
-                : 'text-muted-foreground hover:text-foreground hover:bg-white/5 border border-transparent'
+                ? 'bg-[#c8a96e]/15 text-primary border border-[#c8a96e]/25'
+                : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5 border border-transparent'
             )}
           >
             <Icon aria-hidden="true" className="size-4 shrink-0" />
